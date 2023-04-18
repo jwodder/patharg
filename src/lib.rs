@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -25,6 +25,17 @@ impl PathArg {
         match self {
             PathArg::Std => io::stdout().lock().write_all(contents.as_ref()),
             PathArg::Path(p) => fs::write(p, contents),
+        }
+    }
+
+    pub fn read(&self) -> io::Result<Vec<u8>> {
+        match self {
+            PathArg::Std => {
+                let mut vec = Vec::new();
+                io::stdin().lock().read_to_end(&mut vec)?;
+                Ok(vec)
+            }
+            PathArg::Path(p) => fs::read(p),
         }
     }
 
