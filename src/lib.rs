@@ -80,6 +80,9 @@ impl PathArg {
         }
     }
 
+    // Requires Rust 1.68+ due to `impl DerefMut for PathBuf` not being
+    // introduced until that version
+    #[cfg(feature = "path_buf_deref_mut")]
     pub fn path_mut_ref(&mut self) -> Option<&mut Path> {
         match self {
             PathArg::Std => None,

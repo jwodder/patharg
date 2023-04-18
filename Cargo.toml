@@ -2,6 +2,14 @@
 name = "patharg"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.65"
+description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
+authors = ["John Thorvald Wodder II <patharg@varonathe.org>"]
+repository = "https://github.com/jwodder/patharg"
+license = "MIT"
+keywords = ["argv", "args", "stdin", "stdout"]
+categories = ["command-line-interface", "filesystem"]
+exclude = ["/.*"]
 
 [dependencies]
 either = "1.8.1"
