@@ -2,7 +2,7 @@ use either::Either;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
-use std::io::{self, BufRead, BufReader, Read, StdinLock, Write};
+use std::io::{self, BufRead, BufReader, Read as _, StdinLock, StdoutLock, Write as _};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -20,6 +20,20 @@ impl PathArg {
         } else {
             PathArg::Path(arg.into())
         }
+    }
+
+    pub fn open(&self) -> io::Result<Read> {
+        Ok(match self {
+            PathArg::Std => Either::Left(io::stdin().lock()),
+            PathArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
+        })
+    }
+
+    pub fn create(&self) -> io::Result<Write> {
+        Ok(match self {
+            PathArg::Std => Either::Left(io::stdout().lock()),
+            PathArg::Path(p) => Either::Right(fs::File::create(p)?),
+        })
     }
 
     pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
@@ -48,11 +62,7 @@ impl PathArg {
     }
 
     pub fn lines(&self) -> io::Result<Lines> {
-        let bufread = match self {
-            PathArg::Std => Either::Left(io::stdin().lock()),
-            PathArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
-        };
-        Ok(bufread.lines())
+        Ok(self.open()?.lines())
     }
 
     pub fn is_std(&self) -> bool {
@@ -93,7 +103,9 @@ impl<S: AsRef<OsStr>> From<S> for PathArg {
     }
 }
 
-pub type Lines = io::Lines<Either<StdinLock<'static>, BufReader<fs::File>>>;
+pub type Read = Either<StdinLock<'static>, BufReader<fs::File>>;
+pub type Write = Either<StdoutLock<'static>, fs::File>;
+pub type Lines = io::Lines<Read>;
 
 #[cfg(test)]
 mod tests {
