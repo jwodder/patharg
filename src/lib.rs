@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::fmt;
-use std::io;
+use std::fs;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -20,10 +21,17 @@ impl PathArg {
         }
     }
 
+    pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
+        match self {
+            PathArg::Std => io::stdout().lock().write_all(contents.as_ref()),
+            PathArg::Path(p) => fs::write(p, contents),
+        }
+    }
+
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
             PathArg::Std => io::read_to_string(io::stdin().lock()),
-            PathArg::Path(p) => std::fs::read_to_string(p),
+            PathArg::Path(p) => fs::read_to_string(p),
         }
     }
 
