@@ -12,4 +12,9 @@ categories = ["command-line-interface", "filesystem"]
 exclude = ["/.*"]
 
 [dependencies]
+clap = { version = "4.2.3", optional = true, features = ["derive"] }
 either = "1.8.1"
+
+[[example]]
+name = "flipcase"
+required-features = ["clap"]

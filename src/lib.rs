@@ -1,3 +1,22 @@
+//! Most CLI commands that take file paths as arguments follow the convention
+//! of treating a path of `-` (a single hyphen/dash) as referring to either
+//! standard input or standard output (depending on whether the path is read
+//! from or written to).  The `patharg` crate lets your programs follow this
+//! convention too: it provides a `PathArg` type that wraps a command-line
+//! argument, with methods for reading from or writing to either the given path
+//! or — if the argument is just a hyphen — the appropriate standard stream.
+//!
+//! [`PathArg`] implements `From<OsString>` and `From<String>`, so you can use
+//! it seamlessly with your favorite Rust source of command-line arguments, be
+//! it [`clap`][], [`lexopt`][], plain old
+//! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
+//!
+//! See [`examples/flipcase.rs`][flipcase] in the source repository for an
+//! example of how to use this crate with `clap`.
+//!
+//! [`clap`]: https://crates.io/crates/clap
+//! [`lexopt`]: https://crates.io/crates/lexopt
+//! [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
 use either::Either;
 use std::ffi::OsStr;
 use std::fmt;
