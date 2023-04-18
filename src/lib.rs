@@ -24,7 +24,7 @@ use std::fs;
 use std::io::{self, BufRead, BufReader, Read as _, StdinLock, StdoutLock, Write as _};
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum PathArg {
     #[default]
     Std,
@@ -38,6 +38,31 @@ impl PathArg {
             PathArg::Std
         } else {
             PathArg::Path(arg.into())
+        }
+    }
+
+    pub fn is_std(&self) -> bool {
+        self == &PathArg::Std
+    }
+
+    pub fn is_path(&self) -> bool {
+        matches!(self, PathArg::Path(_))
+    }
+
+    pub fn path_ref(&self) -> Option<&Path> {
+        match self {
+            PathArg::Std => None,
+            PathArg::Path(p) => Some(p),
+        }
+    }
+
+    // Requires Rust 1.68+ due to `impl DerefMut for PathBuf` not being
+    // introduced until that version
+    #[cfg(feature = "path_buf_deref_mut")]
+    pub fn path_mut(&mut self) -> Option<&mut Path> {
+        match self {
+            PathArg::Std => None,
+            PathArg::Path(p) => Some(p),
         }
     }
 
@@ -82,31 +107,6 @@ impl PathArg {
 
     pub fn lines(&self) -> io::Result<Lines> {
         Ok(self.open()?.lines())
-    }
-
-    pub fn is_std(&self) -> bool {
-        self == &PathArg::Std
-    }
-
-    pub fn is_path(&self) -> bool {
-        matches!(self, PathArg::Path(_))
-    }
-
-    pub fn path_ref(&self) -> Option<&Path> {
-        match self {
-            PathArg::Std => None,
-            PathArg::Path(p) => Some(p),
-        }
-    }
-
-    // Requires Rust 1.68+ due to `impl DerefMut for PathBuf` not being
-    // introduced until that version
-    #[cfg(feature = "path_buf_deref_mut")]
-    pub fn path_mut_ref(&mut self) -> Option<&mut Path> {
-        match self {
-            PathArg::Std => None,
-            PathArg::Path(p) => Some(p),
-        }
     }
 }
 
@@ -226,5 +226,36 @@ mod tests {
         let p = PathArg::from("./-");
         assert!(!p.is_std());
         assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_default() {
+        assert_eq!(PathArg::default(), PathArg::Std);
+    }
+
+    #[test]
+    fn test_none_path_ref() {
+        let p = PathArg::Std;
+        assert_eq!(p.path_ref(), None);
+    }
+
+    #[test]
+    fn test_some_path_ref() {
+        let p = PathArg::Path(PathBuf::from("-"));
+        assert_eq!(p.path_ref(), Some(Path::new("-")));
+    }
+
+    #[test]
+    #[cfg(feature = "path_buf_deref_mut")]
+    fn test_none_path_mut() {
+        let mut p = PathArg::Std;
+        assert_eq!(p.path_ref(), None);
+    }
+
+    #[test]
+    #[cfg(feature = "path_buf_deref_mut")]
+    fn test_some_path_mut() {
+        let mut p = PathArg::Path(PathBuf::from("-"));
+        assert_eq!(p.path_mut(), Some(Path::new("-")));
     }
 }
