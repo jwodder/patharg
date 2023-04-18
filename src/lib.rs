@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -11,6 +11,15 @@ pub enum PathArg {
 }
 
 impl PathArg {
+    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> PathArg {
+        let arg = arg.as_ref();
+        if arg == "-" {
+            PathArg::Std
+        } else {
+            PathArg::Path(arg.into())
+        }
+    }
+
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
             PathArg::Std => io::read_to_string(io::stdin().lock()),
@@ -52,10 +61,6 @@ impl fmt::Display for PathArg {
 
 impl From<OsString> for PathArg {
     fn from(s: OsString) -> PathArg {
-        if s == "-" {
-            PathArg::Std
-        } else {
-            PathArg::Path(s.into())
-        }
+        PathArg::from_arg(s)
     }
 }
