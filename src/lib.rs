@@ -13,10 +13,7 @@ pub enum PathArg {
 impl PathArg {
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
-            PathArg::Std => {
-                let stdin = io::stdin();
-                io::read_to_string(stdin.lock())
-            }
+            PathArg::Std => io::read_to_string(io::stdin().lock()),
             PathArg::Path(p) => std::fs::read_to_string(p),
         }
     }
