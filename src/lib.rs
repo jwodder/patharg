@@ -1,9 +1,9 @@
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub enum PathArg {
     #[default]
     Std,
@@ -59,8 +59,108 @@ impl fmt::Display for PathArg {
     }
 }
 
-impl From<OsString> for PathArg {
-    fn from(s: OsString) -> PathArg {
+impl<S: AsRef<OsStr>> From<S> for PathArg {
+    fn from(s: S) -> PathArg {
         PathArg::from_arg(s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::OsString;
+
+    #[test]
+    fn test_assert_std_from_osstring() {
+        let s = OsString::from("-");
+        let p = PathArg::from(s);
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_osstring() {
+        let s = OsString::from("./-");
+        let p = PathArg::from(s);
+        assert!(!p.is_std());
+        assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_assert_std_from_osstr() {
+        let s = OsStr::new("-");
+        let p = PathArg::from(s);
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_osstr() {
+        let s = OsStr::new("./-");
+        let p = PathArg::from(s);
+        assert!(!p.is_std());
+        assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_assert_std_from_pathbuf() {
+        let s = PathBuf::from("-");
+        let p = PathArg::from(s);
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_pathbuf() {
+        let s = PathBuf::from("./-");
+        let p = PathArg::from(s);
+        assert!(!p.is_std());
+        assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_assert_std_from_path() {
+        let s = Path::new("-");
+        let p = PathArg::from(s);
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_path() {
+        let s = Path::new("./-");
+        let p = PathArg::from(s);
+        assert!(!p.is_std());
+        assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_assert_std_from_string() {
+        let s = String::from("-");
+        let p = PathArg::from(s);
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_string() {
+        let s = String::from("./-");
+        let p = PathArg::from(s);
+        assert!(!p.is_std());
+        assert!(p.is_path());
+    }
+
+    #[test]
+    fn test_assert_std_from_str() {
+        let p = PathArg::from("-");
+        assert!(p.is_std());
+        assert!(!p.is_path());
+    }
+
+    #[test]
+    fn test_assert_path_from_str() {
+        let p = PathArg::from("./-");
+        assert!(!p.is_std());
+        assert!(p.is_path());
     }
 }
