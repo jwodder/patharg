@@ -1,7 +1,8 @@
+use either::Either;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, BufRead, BufReader, Read, StdinLock, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -46,6 +47,14 @@ impl PathArg {
         }
     }
 
+    pub fn lines(&self) -> io::Result<Lines> {
+        let bufread = match self {
+            PathArg::Std => Either::Left(io::stdin().lock()),
+            PathArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
+        };
+        Ok(bufread.lines())
+    }
+
     pub fn is_std(&self) -> bool {
         self == &PathArg::Std
     }
@@ -83,6 +92,8 @@ impl<S: AsRef<OsStr>> From<S> for PathArg {
         PathArg::from_arg(s)
     }
 }
+
+pub type Lines = io::Lines<Either<StdinLock<'static>, BufReader<fs::File>>>;
 
 #[cfg(test)]
 mod tests {
