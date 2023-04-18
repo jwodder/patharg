@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::fmt;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum PathArg {
@@ -18,6 +18,28 @@ impl PathArg {
                 io::read_to_string(stdin.lock())
             }
             PathArg::Path(p) => std::fs::read_to_string(p),
+        }
+    }
+
+    pub fn is_std(&self) -> bool {
+        self == &PathArg::Std
+    }
+
+    pub fn is_path(&self) -> bool {
+        matches!(self, PathArg::Path(_))
+    }
+
+    pub fn path_ref(&self) -> Option<&Path> {
+        match self {
+            PathArg::Std => None,
+            PathArg::Path(p) => Some(p),
+        }
+    }
+
+    pub fn path_mut_ref(&mut self) -> Option<&mut Path> {
+        match self {
+            PathArg::Std => None,
+            PathArg::Path(p) => Some(p),
         }
     }
 }
