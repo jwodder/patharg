@@ -22,7 +22,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read as _, StdinLock, StdoutLock, Write as _};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum PathArg {
@@ -49,17 +49,14 @@ impl PathArg {
         matches!(self, PathArg::Path(_))
     }
 
-    pub fn path_ref(&self) -> Option<&Path> {
+    pub fn path_ref(&self) -> Option<&PathBuf> {
         match self {
             PathArg::Std => None,
             PathArg::Path(p) => Some(p),
         }
     }
 
-    // Requires Rust 1.68+ due to `impl DerefMut for PathBuf` not being
-    // introduced until that version
-    #[cfg(feature = "path_buf_deref_mut")]
-    pub fn path_mut(&mut self) -> Option<&mut Path> {
+    pub fn path_mut(&mut self) -> Option<&mut PathBuf> {
         match self {
             PathArg::Std => None,
             PathArg::Path(p) => Some(p),
@@ -133,6 +130,7 @@ pub type Lines = io::Lines<Read>;
 mod tests {
     use super::*;
     use std::ffi::OsString;
+    use std::path::Path;
 
     #[test]
     fn test_assert_std_from_osstring() {
@@ -242,20 +240,18 @@ mod tests {
     #[test]
     fn test_some_path_ref() {
         let p = PathArg::Path(PathBuf::from("-"));
-        assert_eq!(p.path_ref(), Some(Path::new("-")));
+        assert_eq!(p.path_ref(), Some(&PathBuf::from("-")));
     }
 
     #[test]
-    #[cfg(feature = "path_buf_deref_mut")]
     fn test_none_path_mut() {
         let mut p = PathArg::Std;
-        assert_eq!(p.path_ref(), None);
+        assert_eq!(p.path_mut(), None);
     }
 
     #[test]
-    #[cfg(feature = "path_buf_deref_mut")]
     fn test_some_path_mut() {
         let mut p = PathArg::Path(PathBuf::from("-"));
-        assert_eq!(p.path_mut(), Some(Path::new("-")));
+        assert_eq!(p.path_mut(), Some(&mut PathBuf::from("-")));
     }
 }
