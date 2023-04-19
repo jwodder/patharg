@@ -10,13 +10,17 @@
 //! it seamlessly with your favorite Rust source of command-line arguments, be
 //! it [`clap`][], [`lexopt`][], plain old
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
+//! The source repository contains examples of two of these:
 //!
-//! See [`examples/flipcase.rs`][flipcase] in the source repository for an
-//! example of how to use this crate with `clap`.
+//! - [`examples/flipcase.rs`][flipcase] shows how to use this crate with
+//!   `clap`.
+//! - [`examples/revchars.rs`][revchars] shows how to use this crate with
+//!   `lexopt`.
 //!
 //! [`clap`]: https://crates.io/crates/clap
 //! [`lexopt`]: https://crates.io/crates/lexopt
 //! [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
+//! [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
 use either::Either;
 use std::ffi::OsStr;
 use std::fmt;

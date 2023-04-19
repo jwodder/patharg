@@ -1,3 +1,5 @@
+//! An example of using patharg with clap
+//!
 //! Say you're using clap to write a command named "flipcase" that flips the
 //! cases of all the letters in a file, changing uppercase to lowercase and
 //! lowercase to uppercase, and you want this command to take a path to a file
