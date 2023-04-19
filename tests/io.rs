@@ -1,6 +1,5 @@
 extern crate rstest_reuse;
 use assert_cmd::Command;
-use assert_fs::fixture::ChildPath;
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
 use predicates::prelude::*;
@@ -24,9 +23,14 @@ struct IOPolicy {
 }
 
 impl IOPolicy {
-    fn run<S: AsRef<[u8]>>(&self, cmdpath: OsString, input: S, output: S) {
-        let input = input.as_ref();
-        let output = output.as_ref();
+    fn run<S: ?Sized + AsRef<[u8]>>(
+        &self,
+        cmdpath: OsString,
+        input: &'static S,
+        output: &'static S,
+    ) {
+        let input: &'static [u8] = input.as_ref();
+        let output: &'static [u8] = output.as_ref();
         let mut cmd = Command::new(cmdpath);
         let tmpdir = TempDir::new().unwrap();
         let outfile = match self.output {
@@ -59,22 +63,17 @@ impl IOPolicy {
         };
         let r = cmd.assert().success();
         if let Some(p) = infile {
-            assert_file_contents(&p, input);
+            p.assert(input);
         }
         match outfile {
             Some(p) => {
-                assert_file_contents(&p, output);
+                p.assert(output);
             }
             None => {
                 r.stdout(predicate::eq(output));
             }
         }
     }
-}
-
-fn assert_file_contents(path: &ChildPath, contents: &[u8]) {
-    let pred = predicate::function(|p: &ChildPath| std::fs::read(p.path()).unwrap() == contents);
-    assert!(pred.eval(path));
 }
 
 #[template]
