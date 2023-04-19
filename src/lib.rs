@@ -389,4 +389,16 @@ mod tests {
         let p = PathArg::Path(PathBuf::from("-"));
         assert_eq!(p.into_path(), Some(PathBuf::from("-")));
     }
+
+    #[test]
+    fn test_display_std() {
+        let p = PathArg::Std;
+        assert_eq!(p.to_string(), "-");
+    }
+
+    #[test]
+    fn test_display_path() {
+        let p = PathArg::from_arg("./-");
+        assert_eq!(p.to_string(), "./-");
+    }
 }
