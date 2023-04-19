@@ -49,6 +49,8 @@ impl PathArg {
     /// only a single hyphen/dash), [`PathArg::Std`] is returned; otherwise, a
     /// [`PathArg::Path`] is returned.
     ///
+    /// # Example
+    ///
     /// ```
     /// use patharg::PathArg;
     /// use std::path::PathBuf;
@@ -69,17 +71,54 @@ impl PathArg {
     }
 
     /// Returns true if the path arg is the `Std` variant of `PathArg`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    ///
+    /// let p1 = PathArg::from_arg("-");
+    /// assert!(p1.is_std());
+    ///
+    /// let p2 = PathArg::from_arg("file.txt");
+    /// assert!(!p2.is_std());
+    /// ```
     pub fn is_std(&self) -> bool {
         self == &PathArg::Std
     }
 
     /// Returns true if the path arg is the `Path` variant of `PathArg`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    ///
+    /// let p1 = PathArg::from_arg("-");
+    /// assert!(!p1.is_path());
+    ///
+    /// let p2 = PathArg::from_arg("file.txt");
+    /// assert!(p2.is_path());
+    /// ```
     pub fn is_path(&self) -> bool {
         matches!(self, PathArg::Path(_))
     }
 
     /// Retrieve a reference to the inner [`PathBuf`].  If the path arg is
     /// the `Std` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = PathArg::from_arg("-");
+    /// assert_eq!(p1.path_ref(), None);
+    ///
+    /// let p2 = PathArg::from_arg("file.txt");
+    /// assert_eq!(p2.path_ref(), Some(&PathBuf::from("file.txt")));
+    /// ```
     pub fn path_ref(&self) -> Option<&PathBuf> {
         match self {
             PathArg::Std => None,
@@ -89,6 +128,19 @@ impl PathArg {
 
     /// Retrieve a mutable reference to the inner [`PathBuf`].  If the path arg
     /// is the `Std` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let mut p1 = PathArg::from_arg("-");
+    /// assert_eq!(p1.path_mut(), None);
+    ///
+    /// let mut p2 = PathArg::from_arg("file.txt");
+    /// assert_eq!(p2.path_mut(), Some(&mut PathBuf::from("file.txt")));
+    /// ```
     pub fn path_mut(&mut self) -> Option<&mut PathBuf> {
         match self {
             PathArg::Std => None,
@@ -98,6 +150,19 @@ impl PathArg {
 
     /// Consume the path arg and return the inner [`PathBuf`].  If the path arg
     /// is the `Std` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = PathArg::from_arg("-");
+    /// assert_eq!(p1.into_path(), None);
+    ///
+    /// let p2 = PathArg::from_arg("file.txt");
+    /// assert_eq!(p2.into_path(), Some(PathBuf::from("file.txt")));
+    /// ```
     pub fn into_path(self) -> Option<PathBuf> {
         match self {
             PathArg::Std => None,
@@ -116,6 +181,25 @@ impl PathArg {
     /// # Errors
     ///
     /// Has the same error conditions as [`std::fs::File::open`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io::{self, Read};
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let mut f = infile.open()?;
+    ///     let mut buffer = [0; 16];
+    ///     f.read(&mut buffer)?;
+    ///     println!("First 16 bytes: {:?}", buffer);
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn open(&self) -> io::Result<PathReader> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdin().lock()),
@@ -134,6 +218,23 @@ impl PathArg {
     /// # Errors
     ///
     /// Has the same error conditions as [`std::fs::File::create`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io::{self, Write};
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let mut f = infile.create()?;
+    ///     write!(&mut f, "I am writing to {}.", infile)?;
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn create(&self) -> io::Result<PathWriter> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdout().lock()),
@@ -152,6 +253,22 @@ impl PathArg {
     ///
     /// Has the same error conditions as [`std::io::Write::write_all`] and
     /// [`std::fs::write`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     infile.write("This is the path arg's new contents.\n")?;
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
         match self {
             PathArg::Std => io::stdout().lock().write_all(contents.as_ref()),
@@ -169,6 +286,23 @@ impl PathArg {
     ///
     /// Has the same error conditions as [`std::io::Read::read_to_end`] and
     /// [`std::fs::read`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let input = infile.read()?;
+    ///     println!("Read {} bytes from input", input.len());
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn read(&self) -> io::Result<Vec<u8>> {
         match self {
             PathArg::Std => {
@@ -190,6 +324,23 @@ impl PathArg {
     ///
     /// Has the same error conditions as [`std::io::read_to_string`] and
     /// [`std::fs::read_to_string`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let input = infile.read_to_string()?;
+    ///     println!("Read {} characters from input", input.len());
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
             PathArg::Std => io::read_to_string(io::stdin().lock()),
@@ -211,6 +362,25 @@ impl PathArg {
     /// # Errors
     ///
     /// Has the same error conditions as [`PathArg::open()`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::PathArg;
+    /// use std::env::args_os;
+    /// use std::io;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(PathArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     for (i, r) in infile.lines()?.enumerate() {
+    ///         let line = r?;
+    ///         println!("Line {} is {} characters long.", i + 1, line.len());
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn lines(&self) -> io::Result<Lines> {
         Ok(self.open()?.lines())
     }
