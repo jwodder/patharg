@@ -1,9 +1,9 @@
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) <!-- [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) -->
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![CI Status](https://github.com/jwodder/patharg/actions/workflows/test.yml/badge.svg)](https://github.com/jwodder/patharg/actions/workflows/test.yml)
 [![codecov.io](https://codecov.io/gh/jwodder/patharg/branch/master/graph/badge.svg)](https://codecov.io/gh/jwodder/patharg)
 [![MIT License](https://img.shields.io/github/license/jwodder/patharg.svg)](https://opensource.org/licenses/MIT)
 
-[GitHub](https://github.com/jwodder/patharg) <!-- | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) --> | [Issues](https://github.com/jwodder/patharg/issues)
+[GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues)
 
 Most CLI commands that take file paths as arguments follow the convention of
 treating a path of `-` (a single hyphen/dash) as referring to either standard
@@ -29,6 +29,16 @@ out there.  The source repository contains examples of two of these:
 [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
 [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
 
+Installation
+============
+
+`patharg` requires version 1.65 of Rust or higher.  To use the `patharg`
+library in your Cargo project, add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+patharg = "0.1.0"
+```
 
 Comparison with clio
 ====================
