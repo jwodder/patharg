@@ -28,14 +28,37 @@ use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::PathBuf;
 
+/// A representation of a command-line argument that can refer to either a
+/// standard stream (stdin or stdout) or a file system path.
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum PathArg {
+    /// Refers to a standard stream (stdin or stdout).  Which stream is used
+    /// depends on whether the `PathArg` is read from or written to.
+    ///
+    /// This is the variant returned by `PathArg::default()`.
     #[default]
     Std,
+
+    /// Refers to a file system path (stored in `.0`)
     Path(PathBuf),
 }
 
 impl PathArg {
+    /// Construct a `PathArg` from a string, usually one taken from
+    /// command-line arguments.  If the string equals `"-"` (i.e., it contains
+    /// only a single hyphen/dash), [`PathArg::Std`] is returned; otherwise, a
+    /// [`PathArg::Path`] is returned.
+    ///
+    /// ```
+    /// use patharg::PathArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = PathArg::from_arg("-");
+    /// assert_eq!(p1, PathArg::Std);
+    ///
+    /// let p2 = PathArg::from_arg("./-");
+    /// assert_eq!(p2, PathArg::Path(PathBuf::from("./-")));
+    /// ```
     pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> PathArg {
         let arg = arg.as_ref();
         if arg == "-" {
@@ -45,14 +68,18 @@ impl PathArg {
         }
     }
 
+    /// Returns true if the path arg is the `Std` variant of `PathArg`.
     pub fn is_std(&self) -> bool {
         self == &PathArg::Std
     }
 
+    /// Returns true if the path arg is the `Path` variant of `PathArg`.
     pub fn is_path(&self) -> bool {
         matches!(self, PathArg::Path(_))
     }
 
+    /// Retrieve a reference to the inner [`PathBuf`].  If the path arg is
+    /// the `Std` variant, this returns `None`.
     pub fn path_ref(&self) -> Option<&PathBuf> {
         match self {
             PathArg::Std => None,
@@ -60,6 +87,8 @@ impl PathArg {
         }
     }
 
+    /// Retrieve a mutable reference to the inner [`PathBuf`].  If the path arg
+    /// is the `Std` variant, this returns `None`.
     pub fn path_mut(&mut self) -> Option<&mut PathBuf> {
         match self {
             PathArg::Std => None,
@@ -67,6 +96,8 @@ impl PathArg {
         }
     }
 
+    /// Consume the path arg and return the inner [`PathBuf`].  If the path arg
+    /// is the `Std` variant, this returns `None`.
     pub fn into_path(self) -> Option<PathBuf> {
         match self {
             PathArg::Std => None,
@@ -74,6 +105,17 @@ impl PathArg {
         }
     }
 
+    /// Open the path arg for reading.
+    ///
+    /// If the path arg is the `Std` variant, this returns a locked reference
+    /// to stdin.  Otherwise, if the path arg is a `Path` variant, the given
+    /// path is opened for reading.
+    ///
+    /// The returned reader implements [`std::io::BufRead`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::fs::File::open`].
     pub fn open(&self) -> io::Result<PathReader> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdin().lock()),
@@ -81,6 +123,17 @@ impl PathArg {
         })
     }
 
+    /// Open the path arg for writing.
+    ///
+    /// If the path arg is the `Std` variant, this returns a locked reference
+    /// to stdout.  Otherwise, if the path arg is a `Path` variant, the given
+    /// path is opened for writing; if the path does not exist, it is created.
+    ///
+    /// The returned writer implements [`std::io::Write`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::fs::File::create`].
     pub fn create(&self) -> io::Result<PathWriter> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdout().lock()),
@@ -88,6 +141,17 @@ impl PathArg {
         })
     }
 
+    /// Write a slice as the entire contents of the path arg.
+    ///
+    /// If the path arg is the `Std` variant, the given data is written to
+    /// stdout.  Otherwise, if the path arg is a `Path` variant, the contents
+    /// of the given path are replaced with the given data, if the path does
+    /// not exist, it is created first.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::io::Write::write_all`] and
+    /// [`std::fs::write`].
     pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
         match self {
             PathArg::Std => io::stdout().lock().write_all(contents.as_ref()),
@@ -95,6 +159,16 @@ impl PathArg {
         }
     }
 
+    /// Read the entire contents of the path arg into a bytes vector.
+    ///
+    /// If the path arg is the `Std` variant, the entire contents of stdin are
+    /// read.  Otherwise, if the path arg is a `Path` variant, the contents of
+    /// the given path are read.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::io::Read::read_to_end`] and
+    /// [`std::fs::read`].
     pub fn read(&self) -> io::Result<Vec<u8>> {
         match self {
             PathArg::Std => {
@@ -106,6 +180,16 @@ impl PathArg {
         }
     }
 
+    /// Read the entire contents of the path arg into a string.
+    ///
+    /// If the path arg is the `Std` variant, the entire contents of stdin are
+    /// read.  Otherwise, if the path arg is a `Path` variant, the contents of
+    /// the given path are read.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::io::read_to_string`] and
+    /// [`std::fs::read_to_string`].
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
             PathArg::Std => io::read_to_string(io::stdin().lock()),
@@ -113,12 +197,28 @@ impl PathArg {
         }
     }
 
+    /// Return an iterator over the lines of the path arg.
+    ///
+    /// If the path arg is the `Std` variant, this locks stdin and returns an
+    /// iterator over its lines; the lock is released once the iterator is
+    /// dropped.  Otherwise, if the path arg is a `Path` variant, the given
+    /// path is opened for reading, and its lines are iterated over.
+    ///
+    /// The returned iterator yields instances of `std::io::Result<String>`,
+    /// where each individual item has the same error conditions as
+    /// [`std::io::BufRead::read_line()`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`PathArg::open()`].
     pub fn lines(&self) -> io::Result<Lines> {
         Ok(self.open()?.lines())
     }
 }
 
 impl fmt::Display for PathArg {
+    /// Displays [`PathArg::Std`] as `-` (a single hyphen/dash) and displays
+    /// [`PathArg::Path`] using [`std::path::Path::display()`].
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PathArg::Std => write!(f, "-"),
@@ -128,13 +228,25 @@ impl fmt::Display for PathArg {
 }
 
 impl<S: AsRef<OsStr>> From<S> for PathArg {
+    /// Convert a string to a [`PathArg`] using [`PathArg::from_arg()`].
     fn from(s: S) -> PathArg {
         PathArg::from_arg(s)
     }
 }
 
+/// The type of the readers returned by [`PathArg::open()`].
+///
+/// This type implements [`std::io::BufRead`].
 pub type PathReader = Either<StdinLock<'static>, BufReader<fs::File>>;
+
+/// The type of the writers returned by [`PathArg::create()`].
+///
+/// This type implements [`std::io::Write`].
 pub type PathWriter = Either<StdoutLock<'static>, fs::File>;
+
+/// The type of the iterators returned by [`PathArg::lines()`].
+///
+/// This iterator yields instances of `std::io::Result<String>`.
 pub type Lines = io::Lines<PathReader>;
 
 #[cfg(test)]
