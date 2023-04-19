@@ -47,6 +47,7 @@
 
 use either::Either;
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
@@ -360,6 +361,17 @@ impl<S: AsRef<OsStr>> From<S> for InputArg {
     }
 }
 
+impl From<InputArg> for OsString {
+    /// Converts an input arg back to an `OsString`: `InputArg::Stdin` becomes
+    /// `"-"`, and `InputArg::Path(p)` becomes `p.into()`.
+    fn from(arg: InputArg) -> OsString {
+        match arg {
+            InputArg::Stdin => OsString::from("-"),
+            InputArg::Path(p) => p.into(),
+        }
+    }
+}
+
 /// An output path that can refer to either standard output or a file system
 /// path
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -594,6 +606,17 @@ impl<S: AsRef<OsStr>> From<S> for OutputArg {
     }
 }
 
+impl From<OutputArg> for OsString {
+    /// Converts an output arg back to an `OsString`: `OutputArg::Stdout`
+    /// becomes `"-"`, and `OutputArg::Path(p)` becomes `p.into()`.
+    fn from(arg: OutputArg) -> OsString {
+        match arg {
+            OutputArg::Stdout => OsString::from("-"),
+            OutputArg::Path(p) => p.into(),
+        }
+    }
+}
+
 /// The type of the readers returned by [`InputArg::open()`].
 ///
 /// This type implements [`std::io::BufRead`].
@@ -612,7 +635,6 @@ pub type Lines = io::Lines<InputArgReader>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ffi::OsString;
     use std::path::Path;
 
     mod inputarg {
@@ -764,6 +786,18 @@ mod tests {
             let p = InputArg::from_arg("./-");
             assert_eq!(p.to_string(), "./-");
         }
+
+        #[test]
+        fn test_stdin_into_osstring() {
+            let p = InputArg::Stdin;
+            assert_eq!(OsString::from(p), OsString::from("-"));
+        }
+
+        #[test]
+        fn test_path_into_osstring() {
+            let p = InputArg::Path(PathBuf::from("./-"));
+            assert_eq!(OsString::from(p), OsString::from("./-"));
+        }
     }
 
     mod outputarg {
@@ -914,6 +948,18 @@ mod tests {
         fn test_display_path() {
             let p = OutputArg::from_arg("./-");
             assert_eq!(p.to_string(), "./-");
+        }
+
+        #[test]
+        fn test_stdout_into_osstring() {
+            let p = OutputArg::Stdout;
+            assert_eq!(OsString::from(p), OsString::from("-"));
+        }
+
+        #[test]
+        fn test_path_into_osstring() {
+            let p = OutputArg::Path(PathBuf::from("./-"));
+            assert_eq!(OsString::from(p), OsString::from("./-"));
         }
     }
 }
