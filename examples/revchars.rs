@@ -3,10 +3,11 @@
 //! Say you're using lexopt to write a command named "revchars" that reverses
 //! the order of all characters in a file, and you want this command to take a
 //! path to a file to read input from and another path for the file to write
-//! the output to.  Converting the command's arguments to `patharg::PathArg`
-//! will make revchars treat a '-' argument as referring to stdin/stdout, and
-//! you'll be able to use `PathArg`'s methods to read or write from any
-//! filepath or standard stream given on the command line.
+//! the output to.  Converting the command's arguments to `patharg::InputArg`
+//! and `patharg::OutputArg` will make revchars treat a '-' argument as
+//! referring to stdin/stdout, and you'll be able to use the types' methods to
+//! read or write from any filepath or standard stream given on the command
+//! line.
 //!
 //! revchars can then be invoked in the following ways:
 //!
@@ -24,29 +25,32 @@
 //! - `revchars -o - -` — Read input from stdin, write output to stdout
 
 use lexopt::{Arg, Parser};
-use patharg::PathArg;
+use patharg::{InputArg, OutputArg};
 use std::error::Error;
 
 #[derive(Debug, Eq, PartialEq)]
 enum Command {
-    Run { outfile: PathArg, infile: PathArg },
+    Run {
+        outfile: OutputArg,
+        infile: InputArg,
+    },
     Help,
     Version,
 }
 
 impl Command {
     fn from_parser(mut parser: Parser) -> Result<Command, lexopt::Error> {
-        let mut infile: Option<PathArg> = None;
-        let mut outfile: Option<PathArg> = None;
+        let mut infile: Option<InputArg> = None;
+        let mut outfile: Option<OutputArg> = None;
         while let Some(arg) = parser.next()? {
             match arg {
                 Arg::Short('h') | Arg::Long("help") => return Ok(Command::Help),
                 Arg::Short('V') | Arg::Long("version") => return Ok(Command::Version),
                 Arg::Short('o') | Arg::Long("outfile") => {
-                    outfile = Some(PathArg::from_arg(parser.value()?));
+                    outfile = Some(OutputArg::from_arg(parser.value()?));
                 }
                 Arg::Value(val) if infile.is_none() => {
-                    infile = Some(PathArg::from_arg(val));
+                    infile = Some(InputArg::from_arg(val));
                 }
                 _ => return Err(arg.unexpected()),
             }

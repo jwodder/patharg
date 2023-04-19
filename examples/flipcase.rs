@@ -4,10 +4,11 @@
 //! cases of all the letters in a file, changing uppercase to lowercase and
 //! lowercase to uppercase, and you want this command to take a path to a file
 //! to read input from and another path for the file to write the output to.
-//! By using a `patharg::PathArg` as the type of the arguments in your
-//! `clap::Parser`, flipcase will treat a '-' argument as referring to
-//! stdin/stdout, and you'll be able to use `PathArg`'s methods to read or
-//! write from any filepath or standard stream given on the command line.
+//! By using `patharg::InputArg` and `patharg::OutputArg` as the types of the
+//! arguments in your `clap::Parser`, flipcase will treat a '-' argument as
+//! referring to stdin/stdout, and you'll be able to use the types' methods to
+//! read or write from any filepath or standard stream given on the command
+//! line.
 //!
 //! flipcase can then be invoked in the following ways:
 //!
@@ -25,7 +26,7 @@
 //! - `flipcase -o - -` — Read input from stdin, write output to stdout
 
 use clap::Parser;
-use patharg::PathArg;
+use patharg::{InputArg, OutputArg};
 use std::io::Write;
 
 /// Flip the cases of all the letters in a file.
@@ -34,12 +35,14 @@ struct Arguments {
     /// The file to write the case-flipped text to.
     #[clap(short = 'o', long, default_value_t)]
     // The `default_value_t` attribute causes the default value of the argument
-    // to be `PathArg::default()`, which equals `PathArg::Std`.
-    outfile: PathArg,
+    // to be `OutputArg::default()`, which equals `OutputArg::Stdout`.
+    outfile: OutputArg,
 
     /// The file to read the text to case-flip from.
     #[clap(default_value_t)]
-    infile: PathArg,
+    // The `default_value_t` attribute causes the default value of the argument
+    // to be `InputArg::default()`, which equals `InputArg::Stdin`.
+    infile: InputArg,
 }
 
 fn main() -> std::io::Result<()> {

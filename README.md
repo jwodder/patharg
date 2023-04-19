@@ -9,13 +9,13 @@ Most CLI commands that take file paths as arguments follow the convention of
 treating a path of `-` (a single hyphen/dash) as referring to either standard
 input or standard output (depending on whether the path is read from or written
 to).  The `patharg` crate lets your programs follow this convention too: it
-provides a `PathArg` type that wraps a command-line argument, with methods for
-reading from or writing to either the given path or — if the argument is just a
-hyphen — the appropriate standard stream.
+provides `InputArg` and `OutputArg` types that wrap command-line arguments,
+with methods for reading from/writing to either the given path or — if the
+argument is just a hyphen — the appropriate standard stream.
 
-`PathArg` implements `From<OsString>` and `From<String>`, so you can use it
-seamlessly with your favorite Rust source of command-line arguments, be it
-[`clap`][], [`lexopt`][], plain old
+`InputArg` and `OutputArg` implement `From<OsString>` and `From<String>`, so
+you can use them seamlessly with your favorite Rust source of command-line
+arguments, be it [`clap`][], [`lexopt`][], plain old
 [`std::env::args`][args]/[`std::env::args_os`][args_os], or whatever else is
 out there.  The source repository contains examples of two of these:
 

@@ -1,13 +1,13 @@
 use clap::Parser;
-use patharg::PathArg;
+use patharg::{InputArg, OutputArg};
 
 #[derive(Parser)]
 struct Arguments {
     #[clap(short = 'o', long, default_value_t)]
-    outfile: PathArg,
+    outfile: OutputArg,
 
     #[clap(default_value_t)]
-    infile: PathArg,
+    infile: InputArg,
 }
 
 fn main() -> std::io::Result<()> {

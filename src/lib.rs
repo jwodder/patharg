@@ -1,14 +1,17 @@
+//! Treat "-" (hyphen/dash) arguments as stdin/stdout
+//!
 //! Most CLI commands that take file paths as arguments follow the convention
 //! of treating a path of `-` (a single hyphen/dash) as referring to either
 //! standard input or standard output (depending on whether the path is read
 //! from or written to).  The `patharg` crate lets your programs follow this
-//! convention too: it provides a `PathArg` type that wraps a command-line
-//! argument, with methods for reading from or writing to either the given path
-//! or — if the argument is just a hyphen — the appropriate standard stream.
+//! convention too: it provides [`InputArg`] and [`OutputArg`] types that wrap
+//! command-line arguments, with methods for reading from/writing to either the
+//! given path or — if the argument is just a hyphen — the appropriate standard
+//! stream.
 //!
-//! [`PathArg`] implements `From<OsString>` and `From<String>`, so you can use
-//! it seamlessly with your favorite Rust source of command-line arguments, be
-//! it [`clap`][], [`lexopt`][], plain old
+//! `InputArg` and `OutputArg` implement `From<OsString>` and `From<String>`,
+//! so you can use them seamlessly with your favorite Rust source of
+//! command-line arguments, be it [`clap`][], [`lexopt`][], plain old
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
 //! The source repository contains examples of two of these:
 //!
@@ -49,153 +52,151 @@ use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::PathBuf;
 
-/// A representation of a command-line argument that can refer to either a
-/// standard stream (stdin or stdout) or a file system path.
+/// An input path that can refer to either standard input or a file system path
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum PathArg {
-    /// Refers to a standard stream (stdin or stdout).  Which stream is used
-    /// depends on whether the `PathArg` is read from or written to.
+pub enum InputArg {
+    /// Refers to standard input.
     ///
-    /// This is the variant returned by `PathArg::default()`.
+    /// This is the variant returned by `InputArg::default()`.
     #[default]
-    Std,
+    Stdin,
 
     /// Refers to a file system path (stored in `.0`)
     Path(PathBuf),
 }
 
-impl PathArg {
-    /// Construct a `PathArg` from a string, usually one taken from
+impl InputArg {
+    /// Construct an `InputArg` from a string, usually one taken from
     /// command-line arguments.  If the string equals `"-"` (i.e., it contains
-    /// only a single hyphen/dash), [`PathArg::Std`] is returned; otherwise, a
-    /// [`PathArg::Path`] is returned.
+    /// only a single hyphen/dash), [`InputArg::Stdin`] is returned; otherwise,
+    /// an [`InputArg::Path`] is returned.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::path::PathBuf;
     ///
-    /// let p1 = PathArg::from_arg("-");
-    /// assert_eq!(p1, PathArg::Std);
+    /// let p1 = InputArg::from_arg("-");
+    /// assert_eq!(p1, InputArg::Stdin);
     ///
-    /// let p2 = PathArg::from_arg("./-");
-    /// assert_eq!(p2, PathArg::Path(PathBuf::from("./-")));
+    /// let p2 = InputArg::from_arg("./-");
+    /// assert_eq!(p2, InputArg::Path(PathBuf::from("./-")));
     /// ```
-    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> PathArg {
+    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> InputArg {
         let arg = arg.as_ref();
         if arg == "-" {
-            PathArg::Std
+            InputArg::Stdin
         } else {
-            PathArg::Path(arg.into())
+            InputArg::Path(arg.into())
         }
     }
 
-    /// Returns true if the path arg is the `Std` variant of `PathArg`.
+    /// Returns true if the input arg is the `Stdin` variant of `InputArg`.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     ///
-    /// let p1 = PathArg::from_arg("-");
-    /// assert!(p1.is_std());
+    /// let p1 = InputArg::from_arg("-");
+    /// assert!(p1.is_stdin());
     ///
-    /// let p2 = PathArg::from_arg("file.txt");
-    /// assert!(!p2.is_std());
+    /// let p2 = InputArg::from_arg("file.txt");
+    /// assert!(!p2.is_stdin());
     /// ```
-    pub fn is_std(&self) -> bool {
-        self == &PathArg::Std
+    pub fn is_stdin(&self) -> bool {
+        self == &InputArg::Stdin
     }
 
-    /// Returns true if the path arg is the `Path` variant of `PathArg`.
+    /// Returns true if the input arg is the `Path` variant of `InputArg`.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     ///
-    /// let p1 = PathArg::from_arg("-");
+    /// let p1 = InputArg::from_arg("-");
     /// assert!(!p1.is_path());
     ///
-    /// let p2 = PathArg::from_arg("file.txt");
+    /// let p2 = InputArg::from_arg("file.txt");
     /// assert!(p2.is_path());
     /// ```
     pub fn is_path(&self) -> bool {
-        matches!(self, PathArg::Path(_))
+        matches!(self, InputArg::Path(_))
     }
 
-    /// Retrieve a reference to the inner [`PathBuf`].  If the path arg is
-    /// the `Std` variant, this returns `None`.
+    /// Retrieve a reference to the inner [`PathBuf`].  If the input arg is
+    /// the `Stdin` variant, this returns `None`.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::path::PathBuf;
     ///
-    /// let p1 = PathArg::from_arg("-");
+    /// let p1 = InputArg::from_arg("-");
     /// assert_eq!(p1.path_ref(), None);
     ///
-    /// let p2 = PathArg::from_arg("file.txt");
+    /// let p2 = InputArg::from_arg("file.txt");
     /// assert_eq!(p2.path_ref(), Some(&PathBuf::from("file.txt")));
     /// ```
     pub fn path_ref(&self) -> Option<&PathBuf> {
         match self {
-            PathArg::Std => None,
-            PathArg::Path(p) => Some(p),
+            InputArg::Stdin => None,
+            InputArg::Path(p) => Some(p),
         }
     }
 
-    /// Retrieve a mutable reference to the inner [`PathBuf`].  If the path arg
-    /// is the `Std` variant, this returns `None`.
+    /// Retrieve a mutable reference to the inner [`PathBuf`].  If the input
+    /// arg is the `Stdin` variant, this returns `None`.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::path::PathBuf;
     ///
-    /// let mut p1 = PathArg::from_arg("-");
+    /// let mut p1 = InputArg::from_arg("-");
     /// assert_eq!(p1.path_mut(), None);
     ///
-    /// let mut p2 = PathArg::from_arg("file.txt");
+    /// let mut p2 = InputArg::from_arg("file.txt");
     /// assert_eq!(p2.path_mut(), Some(&mut PathBuf::from("file.txt")));
     /// ```
     pub fn path_mut(&mut self) -> Option<&mut PathBuf> {
         match self {
-            PathArg::Std => None,
-            PathArg::Path(p) => Some(p),
+            InputArg::Stdin => None,
+            InputArg::Path(p) => Some(p),
         }
     }
 
-    /// Consume the path arg and return the inner [`PathBuf`].  If the path arg
-    /// is the `Std` variant, this returns `None`.
+    /// Consume the input arg and return the inner [`PathBuf`].  If the input
+    /// arg is the `Stdin` variant, this returns `None`.
     ///
     /// # Example
     ///
     /// ```
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::path::PathBuf;
     ///
-    /// let p1 = PathArg::from_arg("-");
+    /// let p1 = InputArg::from_arg("-");
     /// assert_eq!(p1.into_path(), None);
     ///
-    /// let p2 = PathArg::from_arg("file.txt");
+    /// let p2 = InputArg::from_arg("file.txt");
     /// assert_eq!(p2.into_path(), Some(PathBuf::from("file.txt")));
     /// ```
     pub fn into_path(self) -> Option<PathBuf> {
         match self {
-            PathArg::Std => None,
-            PathArg::Path(p) => Some(p),
+            InputArg::Stdin => None,
+            InputArg::Path(p) => Some(p),
         }
     }
 
-    /// Open the path arg for reading.
+    /// Open the input arg for reading.
     ///
-    /// If the path arg is the `Std` variant, this returns a locked reference
-    /// to stdin.  Otherwise, if the path arg is a `Path` variant, the given
-    /// path is opened for reading.
+    /// If the input arg is the `Stdin` variant, this returns a locked
+    /// reference to stdin.  Otherwise, if the path arg is a `Path` variant,
+    /// the given path is opened for reading.
     ///
     /// The returned reader implements [`std::io::BufRead`].
     ///
@@ -206,13 +207,13 @@ impl PathArg {
     /// # Example
     ///
     /// ```no_run
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::env::args_os;
     /// use std::io::{self, Read};
     ///
     /// fn main() -> io::Result<()> {
     ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
+    ///                           .map(InputArg::from_arg)
     ///                           .unwrap_or_default();
     ///     let mut f = infile.open()?;
     ///     let mut buffer = [0; 16];
@@ -221,87 +222,18 @@ impl PathArg {
     ///     Ok(())
     /// }
     /// ```
-    pub fn open(&self) -> io::Result<PathReader> {
+    pub fn open(&self) -> io::Result<InputArgReader> {
         Ok(match self {
-            PathArg::Std => Either::Left(io::stdin().lock()),
-            PathArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
+            InputArg::Stdin => Either::Left(io::stdin().lock()),
+            InputArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
         })
     }
 
-    /// Open the path arg for writing.
+    /// Read the entire contents of the input arg into a bytes vector.
     ///
-    /// If the path arg is the `Std` variant, this returns a locked reference
-    /// to stdout.  Otherwise, if the path arg is a `Path` variant, the given
-    /// path is opened for writing; if the path does not exist, it is created.
-    ///
-    /// The returned writer implements [`std::io::Write`].
-    ///
-    /// # Errors
-    ///
-    /// Has the same error conditions as [`std::fs::File::create`].
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use patharg::PathArg;
-    /// use std::env::args_os;
-    /// use std::io::{self, Write};
-    ///
-    /// fn main() -> io::Result<()> {
-    ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
-    ///                           .unwrap_or_default();
-    ///     let mut f = infile.create()?;
-    ///     write!(&mut f, "I am writing to {}.", infile)?;
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn create(&self) -> io::Result<PathWriter> {
-        Ok(match self {
-            PathArg::Std => Either::Left(io::stdout().lock()),
-            PathArg::Path(p) => Either::Right(fs::File::create(p)?),
-        })
-    }
-
-    /// Write a slice as the entire contents of the path arg.
-    ///
-    /// If the path arg is the `Std` variant, the given data is written to
-    /// stdout.  Otherwise, if the path arg is a `Path` variant, the contents
-    /// of the given path are replaced with the given data, if the path does
-    /// not exist, it is created first.
-    ///
-    /// # Errors
-    ///
-    /// Has the same error conditions as [`std::io::Write::write_all`] and
-    /// [`std::fs::write`].
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use patharg::PathArg;
-    /// use std::env::args_os;
-    /// use std::io;
-    ///
-    /// fn main() -> io::Result<()> {
-    ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
-    ///                           .unwrap_or_default();
-    ///     infile.write("This is the path arg's new contents.\n")?;
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
-        match self {
-            PathArg::Std => io::stdout().lock().write_all(contents.as_ref()),
-            PathArg::Path(p) => fs::write(p, contents),
-        }
-    }
-
-    /// Read the entire contents of the path arg into a bytes vector.
-    ///
-    /// If the path arg is the `Std` variant, the entire contents of stdin are
-    /// read.  Otherwise, if the path arg is a `Path` variant, the contents of
-    /// the given path are read.
+    /// If the input arg is the `Stdin` variant, the entire contents of stdin
+    /// are read.  Otherwise, if the input arg is a `Path` variant, the
+    /// contents of the given path are read.
     ///
     /// # Errors
     ///
@@ -311,13 +243,13 @@ impl PathArg {
     /// # Example
     ///
     /// ```no_run
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::env::args_os;
     /// use std::io;
     ///
     /// fn main() -> io::Result<()> {
     ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
+    ///                           .map(InputArg::from_arg)
     ///                           .unwrap_or_default();
     ///     let input = infile.read()?;
     ///     println!("Read {} bytes from input", input.len());
@@ -326,20 +258,20 @@ impl PathArg {
     /// ```
     pub fn read(&self) -> io::Result<Vec<u8>> {
         match self {
-            PathArg::Std => {
+            InputArg::Stdin => {
                 let mut vec = Vec::new();
                 io::stdin().lock().read_to_end(&mut vec)?;
                 Ok(vec)
             }
-            PathArg::Path(p) => fs::read(p),
+            InputArg::Path(p) => fs::read(p),
         }
     }
 
-    /// Read the entire contents of the path arg into a string.
+    /// Read the entire contents of the input arg into a string.
     ///
-    /// If the path arg is the `Std` variant, the entire contents of stdin are
-    /// read.  Otherwise, if the path arg is a `Path` variant, the contents of
-    /// the given path are read.
+    /// If the input arg is the `Stdin` variant, the entire contents of stdin
+    /// are read.  Otherwise, if the input arg is a `Path` variant, the
+    /// contents of the given path are read.
     ///
     /// # Errors
     ///
@@ -349,13 +281,13 @@ impl PathArg {
     /// # Example
     ///
     /// ```no_run
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::env::args_os;
     /// use std::io;
     ///
     /// fn main() -> io::Result<()> {
     ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
+    ///                           .map(InputArg::from_arg)
     ///                           .unwrap_or_default();
     ///     let input = infile.read_to_string()?;
     ///     println!("Read {} characters from input", input.len());
@@ -364,16 +296,16 @@ impl PathArg {
     /// ```
     pub fn read_to_string(&self) -> io::Result<String> {
         match self {
-            PathArg::Std => io::read_to_string(io::stdin().lock()),
-            PathArg::Path(p) => fs::read_to_string(p),
+            InputArg::Stdin => io::read_to_string(io::stdin().lock()),
+            InputArg::Path(p) => fs::read_to_string(p),
         }
     }
 
-    /// Return an iterator over the lines of the path arg.
+    /// Return an iterator over the lines of the input arg.
     ///
-    /// If the path arg is the `Std` variant, this locks stdin and returns an
-    /// iterator over its lines; the lock is released once the iterator is
-    /// dropped.  Otherwise, if the path arg is a `Path` variant, the given
+    /// If the input arg is the `Stdin` variant, this locks stdin and returns
+    /// an iterator over its lines; the lock is released once the iterator is
+    /// dropped.  Otherwise, if the input arg is a `Path` variant, the given
     /// path is opened for reading, and its lines are iterated over.
     ///
     /// The returned iterator yields instances of `std::io::Result<String>`,
@@ -382,18 +314,18 @@ impl PathArg {
     ///
     /// # Errors
     ///
-    /// Has the same error conditions as [`PathArg::open()`].
+    /// Has the same error conditions as [`InputArg::open()`].
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use patharg::PathArg;
+    /// use patharg::InputArg;
     /// use std::env::args_os;
     /// use std::io;
     ///
     /// fn main() -> io::Result<()> {
     ///     let infile = args_os().nth(1)
-    ///                           .map(PathArg::from_arg)
+    ///                           .map(InputArg::from_arg)
     ///                           .unwrap_or_default();
     ///     for (i, r) in infile.lines()?.enumerate() {
     ///         let line = r?;
@@ -407,38 +339,275 @@ impl PathArg {
     }
 }
 
-impl fmt::Display for PathArg {
-    /// Displays [`PathArg::Std`] as `-` (a single hyphen/dash) and displays
-    /// [`PathArg::Path`] using [`std::path::Path::display()`].
+impl fmt::Display for InputArg {
+    /// Displays [`InputArg::Stdin`] as `-` (a single hyphen/dash) and displays
+    /// [`InputArg::Path`] using [`std::path::Path::display()`].
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            PathArg::Std => write!(f, "-"),
-            PathArg::Path(p) => write!(f, "{}", p.display()),
+            // IMPORTANT: The Display of Stdin has to round-trip back to Stdin
+            // so that InputArg will work properly when used with clap's
+            // `default_value_t`.
+            InputArg::Stdin => write!(f, "-"),
+            InputArg::Path(p) => write!(f, "{}", p.display()),
         }
     }
 }
 
-impl<S: AsRef<OsStr>> From<S> for PathArg {
-    /// Convert a string to a [`PathArg`] using [`PathArg::from_arg()`].
-    fn from(s: S) -> PathArg {
-        PathArg::from_arg(s)
+impl<S: AsRef<OsStr>> From<S> for InputArg {
+    /// Convert a string to a [`InputArg`] using [`InputArg::from_arg()`].
+    fn from(s: S) -> InputArg {
+        InputArg::from_arg(s)
     }
 }
 
-/// The type of the readers returned by [`PathArg::open()`].
+/// An output path that can refer to either standard output or a file system
+/// path
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum OutputArg {
+    /// Refers to standard output.
+    ///
+    /// This is the variant returned by `OutputArg::default()`.
+    #[default]
+    Stdout,
+
+    /// Refers to a file system path (stored in `.0`)
+    Path(PathBuf),
+}
+
+impl OutputArg {
+    /// Construct a `OutputArg` from a string, usually one taken from
+    /// command-line arguments.  If the string equals `"-"` (i.e., it contains
+    /// only a single hyphen/dash), [`OutputArg::Stdout`] is returned;
+    /// otherwise, an [`OutputArg::Path`] is returned.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = OutputArg::from_arg("-");
+    /// assert_eq!(p1, OutputArg::Stdout);
+    ///
+    /// let p2 = OutputArg::from_arg("./-");
+    /// assert_eq!(p2, OutputArg::Path(PathBuf::from("./-")));
+    /// ```
+    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> OutputArg {
+        let arg = arg.as_ref();
+        if arg == "-" {
+            OutputArg::Stdout
+        } else {
+            OutputArg::Path(arg.into())
+        }
+    }
+
+    /// Returns true if the output arg is the `Stdout` variant of `OutputArg`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    ///
+    /// let p1 = OutputArg::from_arg("-");
+    /// assert!(p1.is_stdout());
+    ///
+    /// let p2 = OutputArg::from_arg("file.txt");
+    /// assert!(!p2.is_stdout());
+    /// ```
+    pub fn is_stdout(&self) -> bool {
+        self == &OutputArg::Stdout
+    }
+
+    /// Returns true if the output arg is the `Path` variant of `OutputArg`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    ///
+    /// let p1 = OutputArg::from_arg("-");
+    /// assert!(!p1.is_path());
+    ///
+    /// let p2 = OutputArg::from_arg("file.txt");
+    /// assert!(p2.is_path());
+    /// ```
+    pub fn is_path(&self) -> bool {
+        matches!(self, OutputArg::Path(_))
+    }
+
+    /// Retrieve a reference to the inner [`PathBuf`].  If the output arg is
+    /// the `Stdout` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = OutputArg::from_arg("-");
+    /// assert_eq!(p1.path_ref(), None);
+    ///
+    /// let p2 = OutputArg::from_arg("file.txt");
+    /// assert_eq!(p2.path_ref(), Some(&PathBuf::from("file.txt")));
+    /// ```
+    pub fn path_ref(&self) -> Option<&PathBuf> {
+        match self {
+            OutputArg::Stdout => None,
+            OutputArg::Path(p) => Some(p),
+        }
+    }
+
+    /// Retrieve a mutable reference to the inner [`PathBuf`].  If the output
+    /// arg is the `Stdout` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let mut p1 = OutputArg::from_arg("-");
+    /// assert_eq!(p1.path_mut(), None);
+    ///
+    /// let mut p2 = OutputArg::from_arg("file.txt");
+    /// assert_eq!(p2.path_mut(), Some(&mut PathBuf::from("file.txt")));
+    /// ```
+    pub fn path_mut(&mut self) -> Option<&mut PathBuf> {
+        match self {
+            OutputArg::Stdout => None,
+            OutputArg::Path(p) => Some(p),
+        }
+    }
+
+    /// Consume the output arg and return the inner [`PathBuf`].  If the output
+    /// arg is the `Stdout` variant, this returns `None`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use patharg::OutputArg;
+    /// use std::path::PathBuf;
+    ///
+    /// let p1 = OutputArg::from_arg("-");
+    /// assert_eq!(p1.into_path(), None);
+    ///
+    /// let p2 = OutputArg::from_arg("file.txt");
+    /// assert_eq!(p2.into_path(), Some(PathBuf::from("file.txt")));
+    /// ```
+    pub fn into_path(self) -> Option<PathBuf> {
+        match self {
+            OutputArg::Stdout => None,
+            OutputArg::Path(p) => Some(p),
+        }
+    }
+
+    /// Open the output arg for writing.
+    ///
+    /// If the output arg is the `Stdout` variant, this returns a locked
+    /// reference to stdout.  Otherwise, if the output arg is a `Path` variant,
+    /// the given path is opened for writing; if the path does not exist, it is
+    /// created.
+    ///
+    /// The returned writer implements [`std::io::Write`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::fs::File::create`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::OutputArg;
+    /// use std::env::args_os;
+    /// use std::io::{self, Write};
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let outfile = args_os().nth(1)
+    ///                            .map(OutputArg::from_arg)
+    ///                            .unwrap_or_default();
+    ///     let mut f = outfile.create()?;
+    ///     // The "{}" is replaced by either the output filepath or a hyphen.
+    ///     write!(&mut f, "I am writing to {}.", outfile)?;
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn create(&self) -> io::Result<OutputArgWriter> {
+        Ok(match self {
+            OutputArg::Stdout => Either::Left(io::stdout().lock()),
+            OutputArg::Path(p) => Either::Right(fs::File::create(p)?),
+        })
+    }
+
+    /// Write a slice as the entire contents of the output arg.
+    ///
+    /// If the output arg is the `Stdout` variant, the given data is written to
+    /// stdout.  Otherwise, if the output arg is a `Path` variant, the contents
+    /// of the given path are replaced with the given data; if the path does
+    /// not exist, it is created first.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`std::io::Write::write_all`] and
+    /// [`std::fs::write`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::OutputArg;
+    /// use std::env::args_os;
+    /// use std::io;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let outfile = args_os().nth(1)
+    ///                            .map(OutputArg::from_arg)
+    ///                            .unwrap_or_default();
+    ///     outfile.write("This is the output arg's new contents.\n")?;
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
+        match self {
+            OutputArg::Stdout => io::stdout().lock().write_all(contents.as_ref()),
+            OutputArg::Path(p) => fs::write(p, contents),
+        }
+    }
+}
+
+impl fmt::Display for OutputArg {
+    /// Displays [`OutputArg::Stdout`] as `-` (a single hyphen/dash) and
+    /// displays [`OutputArg::Path`] using [`std::path::Path::display()`].
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            // IMPORTANT: The Display of Stdout has to round-trip back to
+            // Stdout so that OutputArg will work properly when used with
+            // clap's `default_value_t`.
+            OutputArg::Stdout => write!(f, "-"),
+            OutputArg::Path(p) => write!(f, "{}", p.display()),
+        }
+    }
+}
+
+impl<S: AsRef<OsStr>> From<S> for OutputArg {
+    /// Convert a string to a [`OutputArg`] using [`OutputArg::from_arg()`].
+    fn from(s: S) -> OutputArg {
+        OutputArg::from_arg(s)
+    }
+}
+
+/// The type of the readers returned by [`InputArg::open()`].
 ///
 /// This type implements [`std::io::BufRead`].
-pub type PathReader = Either<StdinLock<'static>, BufReader<fs::File>>;
+pub type InputArgReader = Either<StdinLock<'static>, BufReader<fs::File>>;
 
-/// The type of the writers returned by [`PathArg::create()`].
+/// The type of the writers returned by [`OutputArg::create()`].
 ///
 /// This type implements [`std::io::Write`].
-pub type PathWriter = Either<StdoutLock<'static>, fs::File>;
+pub type OutputArgWriter = Either<StdoutLock<'static>, fs::File>;
 
-/// The type of the iterators returned by [`PathArg::lines()`].
+/// The type of the iterators returned by [`InputArg::lines()`].
 ///
 /// This iterator yields instances of `std::io::Result<String>`.
-pub type Lines = io::Lines<PathReader>;
+pub type Lines = io::Lines<InputArgReader>;
 
 #[cfg(test)]
 mod tests {
@@ -446,150 +615,305 @@ mod tests {
     use std::ffi::OsString;
     use std::path::Path;
 
-    #[test]
-    fn test_assert_std_from_osstring() {
-        let s = OsString::from("-");
-        let p = PathArg::from(s);
-        assert!(p.is_std());
-        assert!(!p.is_path());
+    mod inputarg {
+        use super::*;
+
+        #[test]
+        fn test_assert_stdin_from_osstring() {
+            let s = OsString::from("-");
+            let p = InputArg::from(s);
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_osstring() {
+            let s = OsString::from("./-");
+            let p = InputArg::from(s);
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_stdin_from_osstr() {
+            let s = OsStr::new("-");
+            let p = InputArg::from(s);
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_osstr() {
+            let s = OsStr::new("./-");
+            let p = InputArg::from(s);
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_stdin_from_pathbuf() {
+            let s = PathBuf::from("-");
+            let p = InputArg::from(s);
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_pathbuf() {
+            let s = PathBuf::from("./-");
+            let p = InputArg::from(s);
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_stdin_from_path() {
+            let s = Path::new("-");
+            let p = InputArg::from(s);
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_path() {
+            let s = Path::new("./-");
+            let p = InputArg::from(s);
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_stdin_from_string() {
+            let s = String::from("-");
+            let p = InputArg::from(s);
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_string() {
+            let s = String::from("./-");
+            let p = InputArg::from(s);
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_stdin_from_str() {
+            let p = InputArg::from("-");
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_path_from_str() {
+            let p = InputArg::from("./-");
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_default() {
+            assert_eq!(InputArg::default(), InputArg::Stdin);
+        }
+
+        #[test]
+        fn test_stdin_path_ref() {
+            let p = InputArg::Stdin;
+            assert_eq!(p.path_ref(), None);
+        }
+
+        #[test]
+        fn test_path_path_ref() {
+            let p = InputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.path_ref(), Some(&PathBuf::from("-")));
+        }
+
+        #[test]
+        fn test_stdin_path_mut() {
+            let mut p = InputArg::Stdin;
+            assert_eq!(p.path_mut(), None);
+        }
+
+        #[test]
+        fn test_path_path_mut() {
+            let mut p = InputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.path_mut(), Some(&mut PathBuf::from("-")));
+        }
+
+        #[test]
+        fn test_stdin_into_path() {
+            let p = InputArg::Stdin;
+            assert_eq!(p.into_path(), None);
+        }
+
+        #[test]
+        fn test_path_into_path() {
+            let p = InputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.into_path(), Some(PathBuf::from("-")));
+        }
+
+        #[test]
+        fn test_display_stdin() {
+            let p = InputArg::Stdin;
+            assert_eq!(p.to_string(), "-");
+        }
+
+        #[test]
+        fn test_display_path() {
+            let p = InputArg::from_arg("./-");
+            assert_eq!(p.to_string(), "./-");
+        }
     }
 
-    #[test]
-    fn test_assert_path_from_osstring() {
-        let s = OsString::from("./-");
-        let p = PathArg::from(s);
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+    mod outputarg {
+        use super::*;
 
-    #[test]
-    fn test_assert_std_from_osstr() {
-        let s = OsStr::new("-");
-        let p = PathArg::from(s);
-        assert!(p.is_std());
-        assert!(!p.is_path());
-    }
+        #[test]
+        fn test_assert_stdout_from_osstring() {
+            let s = OsString::from("-");
+            let p = OutputArg::from(s);
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_assert_path_from_osstr() {
-        let s = OsStr::new("./-");
-        let p = PathArg::from(s);
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+        #[test]
+        fn test_assert_path_from_osstring() {
+            let s = OsString::from("./-");
+            let p = OutputArg::from(s);
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_assert_std_from_pathbuf() {
-        let s = PathBuf::from("-");
-        let p = PathArg::from(s);
-        assert!(p.is_std());
-        assert!(!p.is_path());
-    }
+        #[test]
+        fn test_assert_stdout_from_osstr() {
+            let s = OsStr::new("-");
+            let p = OutputArg::from(s);
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_assert_path_from_pathbuf() {
-        let s = PathBuf::from("./-");
-        let p = PathArg::from(s);
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+        #[test]
+        fn test_assert_path_from_osstr() {
+            let s = OsStr::new("./-");
+            let p = OutputArg::from(s);
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_assert_std_from_path() {
-        let s = Path::new("-");
-        let p = PathArg::from(s);
-        assert!(p.is_std());
-        assert!(!p.is_path());
-    }
+        #[test]
+        fn test_assert_stdout_from_pathbuf() {
+            let s = PathBuf::from("-");
+            let p = OutputArg::from(s);
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_assert_path_from_path() {
-        let s = Path::new("./-");
-        let p = PathArg::from(s);
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+        #[test]
+        fn test_assert_path_from_pathbuf() {
+            let s = PathBuf::from("./-");
+            let p = OutputArg::from(s);
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_assert_std_from_string() {
-        let s = String::from("-");
-        let p = PathArg::from(s);
-        assert!(p.is_std());
-        assert!(!p.is_path());
-    }
+        #[test]
+        fn test_assert_stdout_from_path() {
+            let s = Path::new("-");
+            let p = OutputArg::from(s);
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_assert_path_from_string() {
-        let s = String::from("./-");
-        let p = PathArg::from(s);
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+        #[test]
+        fn test_assert_path_from_path() {
+            let s = Path::new("./-");
+            let p = OutputArg::from(s);
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_assert_std_from_str() {
-        let p = PathArg::from("-");
-        assert!(p.is_std());
-        assert!(!p.is_path());
-    }
+        #[test]
+        fn test_assert_stdout_from_string() {
+            let s = String::from("-");
+            let p = OutputArg::from(s);
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_assert_path_from_str() {
-        let p = PathArg::from("./-");
-        assert!(!p.is_std());
-        assert!(p.is_path());
-    }
+        #[test]
+        fn test_assert_path_from_string() {
+            let s = String::from("./-");
+            let p = OutputArg::from(s);
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_default() {
-        assert_eq!(PathArg::default(), PathArg::Std);
-    }
+        #[test]
+        fn test_assert_stdout_from_str() {
+            let p = OutputArg::from("-");
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
 
-    #[test]
-    fn test_none_path_ref() {
-        let p = PathArg::Std;
-        assert_eq!(p.path_ref(), None);
-    }
+        #[test]
+        fn test_assert_path_from_str() {
+            let p = OutputArg::from("./-");
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
 
-    #[test]
-    fn test_some_path_ref() {
-        let p = PathArg::Path(PathBuf::from("-"));
-        assert_eq!(p.path_ref(), Some(&PathBuf::from("-")));
-    }
+        #[test]
+        fn test_default() {
+            assert_eq!(OutputArg::default(), OutputArg::Stdout);
+        }
 
-    #[test]
-    fn test_none_path_mut() {
-        let mut p = PathArg::Std;
-        assert_eq!(p.path_mut(), None);
-    }
+        #[test]
+        fn test_stdout_path_ref() {
+            let p = OutputArg::Stdout;
+            assert_eq!(p.path_ref(), None);
+        }
 
-    #[test]
-    fn test_some_path_mut() {
-        let mut p = PathArg::Path(PathBuf::from("-"));
-        assert_eq!(p.path_mut(), Some(&mut PathBuf::from("-")));
-    }
+        #[test]
+        fn test_path_path_ref() {
+            let p = OutputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.path_ref(), Some(&PathBuf::from("-")));
+        }
 
-    #[test]
-    fn test_none_into_path() {
-        let p = PathArg::Std;
-        assert_eq!(p.into_path(), None);
-    }
+        #[test]
+        fn test_stdout_path_mut() {
+            let mut p = OutputArg::Stdout;
+            assert_eq!(p.path_mut(), None);
+        }
 
-    #[test]
-    fn test_some_into_path() {
-        let p = PathArg::Path(PathBuf::from("-"));
-        assert_eq!(p.into_path(), Some(PathBuf::from("-")));
-    }
+        #[test]
+        fn test_path_path_mut() {
+            let mut p = OutputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.path_mut(), Some(&mut PathBuf::from("-")));
+        }
 
-    #[test]
-    fn test_display_std() {
-        let p = PathArg::Std;
-        assert_eq!(p.to_string(), "-");
-    }
+        #[test]
+        fn test_stdout_into_path() {
+            let p = OutputArg::Stdout;
+            assert_eq!(p.into_path(), None);
+        }
 
-    #[test]
-    fn test_display_path() {
-        let p = PathArg::from_arg("./-");
-        assert_eq!(p.to_string(), "./-");
+        #[test]
+        fn test_path_into_path() {
+            let p = OutputArg::Path(PathBuf::from("-"));
+            assert_eq!(p.into_path(), Some(PathBuf::from("-")));
+        }
+
+        #[test]
+        fn test_display_stdout() {
+            let p = OutputArg::Stdout;
+            assert_eq!(p.to_string(), "-");
+        }
+
+        #[test]
+        fn test_display_path() {
+            let p = OutputArg::from_arg("./-");
+            assert_eq!(p.to_string(), "./-");
+        }
     }
 }
