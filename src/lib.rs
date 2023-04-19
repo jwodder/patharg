@@ -67,6 +67,13 @@ impl PathArg {
         }
     }
 
+    pub fn into_path(self) -> Option<PathBuf> {
+        match self {
+            PathArg::Std => None,
+            PathArg::Path(p) => Some(p),
+        }
+    }
+
     pub fn open(&self) -> io::Result<PathReader> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdin().lock()),
@@ -257,5 +264,17 @@ mod tests {
     fn test_some_path_mut() {
         let mut p = PathArg::Path(PathBuf::from("-"));
         assert_eq!(p.path_mut(), Some(&mut PathBuf::from("-")));
+    }
+
+    #[test]
+    fn test_none_into_path() {
+        let p = PathArg::Std;
+        assert_eq!(p.into_path(), None);
+    }
+
+    #[test]
+    fn test_some_into_path() {
+        let p = PathArg::Path(PathBuf::from("-"));
+        assert_eq!(p.into_path(), Some(PathBuf::from("-")));
     }
 }
