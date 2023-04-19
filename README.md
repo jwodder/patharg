@@ -28,3 +28,24 @@ out there.  The source repository contains examples of two of these:
 [args_os]: https://doc.rust-lang.org/std/env/fn.args_os.html
 [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
 [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
+
+
+Comparison with clio
+====================
+
+The only other library I am aware of that provides similar functionality to
+`patharg` is [`clio`][].  Compared to `clio`, `patharg` aims to be a much
+simpler, smaller library that doesn't try to be too clever.  Major differences
+between the libraries include:
+
+- When a `clio` path instance is created, `clio` will either (depending on the
+  type used) open the path immediately — which can lead to empty files being
+  needlessly left behind if an output file is constructed during argument
+  processing but an error occurs before the file is actually used — or else
+  check that the path can be opened — which is vulnerable to TOCTTOU bugs.
+  `patharg` does no such thing.
+
+- `clio` supports reading from & writing to HTTP(S) URLs and has special
+  treatment for FIFOs.  `patharg` sees no need for such excesses.
+
+[`clio`]: https://crates.io/crates/clio
