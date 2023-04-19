@@ -25,7 +25,7 @@ use either::Either;
 use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
-use std::io::{self, BufRead, BufReader, Read as _, StdinLock, StdoutLock, Write as _};
+use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -67,14 +67,14 @@ impl PathArg {
         }
     }
 
-    pub fn open(&self) -> io::Result<Read> {
+    pub fn open(&self) -> io::Result<PathReader> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdin().lock()),
             PathArg::Path(p) => Either::Right(BufReader::new(fs::File::open(p)?)),
         })
     }
 
-    pub fn create(&self) -> io::Result<Write> {
+    pub fn create(&self) -> io::Result<PathWriter> {
         Ok(match self {
             PathArg::Std => Either::Left(io::stdout().lock()),
             PathArg::Path(p) => Either::Right(fs::File::create(p)?),
@@ -126,9 +126,9 @@ impl<S: AsRef<OsStr>> From<S> for PathArg {
     }
 }
 
-pub type Read = Either<StdinLock<'static>, BufReader<fs::File>>;
-pub type Write = Either<StdoutLock<'static>, fs::File>;
-pub type Lines = io::Lines<Read>;
+pub type PathReader = Either<StdinLock<'static>, BufReader<fs::File>>;
+pub type PathWriter = Either<StdoutLock<'static>, fs::File>;
+pub type Lines = io::Lines<PathReader>;
 
 #[cfg(test)]
 mod tests {
