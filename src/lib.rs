@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //! Treat "-" (hyphen/dash) arguments as stdin/stdout
 //!
 //! Most CLI commands that take file paths as arguments follow the convention
@@ -45,6 +46,7 @@
 //!
 //! [`clio`]: https://crates.io/crates/clio
 
+use cfg_if::cfg_if;
 use either::Either;
 use std::ffi::OsStr;
 use std::ffi::OsString;
@@ -52,6 +54,14 @@ use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::PathBuf;
+
+cfg_if! {
+    if #[cfg(feature = "tokio")] {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt, AsyncBufReadExt};
+        use tokio_util::either::Either as AsyncEither;
+        use tokio_stream::wrappers::LinesStream;
+    }
+}
 
 /// An input path that can refer to either standard input or a file system path
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -218,8 +228,8 @@ impl InputArg {
     ///                           .unwrap_or_default();
     ///     let mut f = infile.open()?;
     ///     let mut buffer = [0; 16];
-    ///     f.read(&mut buffer)?;
-    ///     println!("First 16 bytes: {:?}", buffer);
+    ///     let n = f.read(&mut buffer)?;
+    ///     println!("First {} bytes: {:?}", n, &buffer[..n]);
     ///     Ok(())
     /// }
     /// ```
@@ -307,7 +317,7 @@ impl InputArg {
     /// If the input arg is the `Stdin` variant, this locks stdin and returns
     /// an iterator over its lines; the lock is released once the iterator is
     /// dropped.  Otherwise, if the input arg is a `Path` variant, the given
-    /// path is opened for reading, and its lines are iterated over.
+    /// path is opened for reading, and an iterator over its lines is returned.
     ///
     /// The returned iterator yields instances of `std::io::Result<String>`,
     /// where each individual item has the same error conditions as
@@ -337,6 +347,168 @@ impl InputArg {
     /// ```
     pub fn lines(&self) -> io::Result<Lines> {
         Ok(self.open()?.lines())
+    }
+}
+
+#[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+impl InputArg {
+    /// Asynchronously open the input arg for reading.
+    ///
+    /// If the input arg is the `Stdin` variant, this returns a reference to
+    /// stdin.  Otherwise, if the path arg is a `Path` variant, the given path
+    /// is opened for reading.
+    ///
+    /// The returned reader implements [`tokio::io::AsyncRead`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`tokio::fs::File::open`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::InputArg;
+    /// use std::env::args_os;
+    /// use tokio::io::AsyncReadExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(InputArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let mut f = infile.async_open().await?;
+    ///     let mut buffer = [0; 16];
+    ///     let n = f.read(&mut buffer).await?;
+    ///     println!("First {} bytes: {:?}", n, &buffer[..n]);
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_open(&self) -> io::Result<AsyncInputArgReader> {
+        Ok(match self {
+            InputArg::Stdin => AsyncEither::Left(tokio::io::stdin()),
+            InputArg::Path(p) => AsyncEither::Right(tokio::fs::File::open(p).await?),
+        })
+    }
+
+    /// Asynchronously read the entire contents of the input arg into a bytes
+    /// vector.
+    ///
+    /// If the input arg is the `Stdin` variant, the entire contents of stdin
+    /// are read.  Otherwise, if the input arg is a `Path` variant, the
+    /// contents of the given path are read.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as
+    /// [`tokio::io::AsyncReadExt::read_to_end`] and [`tokio::fs::read`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::InputArg;
+    /// use std::env::args_os;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(InputArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let input = infile.async_read().await?;
+    ///     println!("Read {} bytes from input", input.len());
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_read(&self) -> io::Result<Vec<u8>> {
+        match self {
+            InputArg::Stdin => {
+                let mut vec = Vec::new();
+                tokio::io::stdin().read_to_end(&mut vec).await?;
+                Ok(vec)
+            }
+            InputArg::Path(p) => tokio::fs::read(p).await,
+        }
+    }
+
+    /// Asynchronously read the entire contents of the input arg into a string.
+    ///
+    /// If the input arg is the `Stdin` variant, the entire contents of stdin
+    /// are read.  Otherwise, if the input arg is a `Path` variant, the
+    /// contents of the given path are read.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as
+    /// [`tokio::io::AsyncReadExt::read_to_string`] and
+    /// [`tokio::fs::read_to_string`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::InputArg;
+    /// use std::env::args_os;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(InputArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let input = infile.async_read_to_string().await?;
+    ///     println!("Read {} characters from input", input.len());
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_read_to_string(&self) -> io::Result<String> {
+        match self {
+            InputArg::Stdin => {
+                let mut s = String::new();
+                tokio::io::stdin().read_to_string(&mut s).await?;
+                Ok(s)
+            }
+            InputArg::Path(p) => tokio::fs::read_to_string(p).await,
+        }
+    }
+
+    /// Return a stream over the lines of the input arg.
+    ///
+    /// If the input arg is the `Stdin` variant, this returns a stream over the
+    /// lines of stdin.  Otherwise, if the input arg is a `Path` variant, the
+    /// given path is opened for reading, and a stream over its lines is
+    /// returned.
+    ///
+    /// The returned stream yields instances of `std::io::Result<String>`,
+    /// where each individual item has the same error conditions as
+    /// [`tokio::io::AsyncBufReadExt::read_line()`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`InputArg::async_open()`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::InputArg;
+    /// use std::env::args_os;
+    /// use tokio_stream::StreamExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let infile = args_os().nth(1)
+    ///                           .map(InputArg::from_arg)
+    ///                           .unwrap_or_default();
+    ///     let mut i = 1;
+    ///     while let Some(r) = infile.async_lines().await?.next().await {
+    ///         let line = r?;
+    ///         println!("Line {} is {} characters long.", i, line.len());
+    ///         i += 1;
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_lines(&self) -> io::Result<AsyncLines> {
+        Ok(LinesStream::new(
+            tokio::io::BufReader::new(self.async_open().await?).lines(),
+        ))
     }
 }
 
@@ -573,7 +745,7 @@ impl OutputArg {
     ///     let outfile = args_os().nth(1)
     ///                            .map(OutputArg::from_arg)
     ///                            .unwrap_or_default();
-    ///     outfile.write("This is the output arg's new contents.\n")?;
+    ///     outfile.write("This is the output arg's new content.\n")?;
     ///     Ok(())
     /// }
     /// ```
@@ -581,6 +753,82 @@ impl OutputArg {
         match self {
             OutputArg::Stdout => io::stdout().lock().write_all(contents.as_ref()),
             OutputArg::Path(p) => fs::write(p, contents),
+        }
+    }
+}
+
+#[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+impl OutputArg {
+    /// Asynchronously open the output arg for writing.
+    ///
+    /// If the output arg is the `Stdout` variant, this returns a reference to
+    /// stdout.  Otherwise, if the output arg is a `Path` variant, the given
+    /// path is opened for writing; if the path does not exist, it is created.
+    ///
+    /// The returned writer implements [`tokio::io::AsyncWrite`].
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as [`tokio::fs::File::create`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::OutputArg;
+    /// use std::env::args_os;
+    /// use tokio::io::AsyncWriteExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let outfile = args_os().nth(1)
+    ///                            .map(OutputArg::from_arg)
+    ///                            .unwrap_or_default();
+    ///     let mut f = outfile.async_create().await?;
+    ///     // The "{}" is replaced by either the output filepath or a hyphen.
+    ///     let msg = format!("I am writing to {}.\n", outfile);
+    ///     f.write_all(&msg.as_ref()).await?;
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_create(&self) -> io::Result<AsyncOutputArgWriter> {
+        Ok(match self {
+            OutputArg::Stdout => AsyncEither::Left(tokio::io::stdout()),
+            OutputArg::Path(p) => AsyncEither::Right(tokio::fs::File::create(p).await?),
+        })
+    }
+
+    /// Asynchronously write a slice as the entire contents of the output arg.
+    ///
+    /// If the output arg is the `Stdout` variant, the given data is written to
+    /// stdout.  Otherwise, if the output arg is a `Path` variant, the contents
+    /// of the given path are replaced with the given data; if the path does
+    /// not exist, it is created first.
+    ///
+    /// # Errors
+    ///
+    /// Has the same error conditions as
+    /// [`tokio::io::AsyncWriteExt::write_all`] and [`tokio::fs::write`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use patharg::OutputArg;
+    /// use std::env::args_os;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> std::io::Result<()> {
+    ///     let outfile = args_os().nth(1)
+    ///                            .map(OutputArg::from_arg)
+    ///                            .unwrap_or_default();
+    ///     outfile.async_write("This is the output arg's new content.\n").await?;
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn async_write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
+        match self {
+            OutputArg::Stdout => tokio::io::stdout().write_all(contents.as_ref()).await,
+            OutputArg::Path(p) => tokio::fs::write(p, contents).await,
         }
     }
 }
@@ -631,6 +879,30 @@ pub type OutputArgWriter = Either<StdoutLock<'static>, fs::File>;
 ///
 /// This iterator yields instances of `std::io::Result<String>`.
 pub type Lines = io::Lines<InputArgReader>;
+
+cfg_if! {
+    if #[cfg(feature = "tokio")] {
+       /// The type of the asynchronous readers returned by
+       /// [`InputArg::async_open()`].
+       ///
+       /// This type implements [`tokio::io::AsyncRead`].
+       #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+       pub type AsyncInputArgReader = AsyncEither<tokio::io::Stdin, tokio::fs::File>;
+
+       /// The type of the asynchronous writers returned by
+       /// [`OutputArg::async_create()`].
+       ///
+       /// This type implements [`tokio::io::AsyncWrite`].
+       #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+       pub type AsyncOutputArgWriter = AsyncEither<tokio::io::Stdout, tokio::fs::File>;
+
+       /// The type of the streams returned by [`InputArg::async_lines()`].
+       ///
+       /// This stream yields instances of `std::io::Result<String>`.
+       #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+       pub type AsyncLines = LinesStream<tokio::io::BufReader<AsyncInputArgReader>>;
+    }
+}
 
 #[cfg(test)]
 mod tests {

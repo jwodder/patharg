@@ -1,6 +1,6 @@
 [package]
 name = "patharg"
-version = "0.1.0"
+version = "0.2.0-dev"
 edition = "2021"
 rust-version = "1.65"
 description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
@@ -12,9 +12,13 @@ categories = ["command-line-interface", "filesystem"]
 exclude = ["/.*"]
 
 [dependencies]
+cfg-if = "1.0.0"
 clap = { version = "4.2.3", optional = true, features = ["derive"] }
 either = "1.8.1"
 lexopt = { version = "0.3.0", optional = true }
+tokio = { version = "1.27.0", features = ["fs", "io-std", "io-util"], optional = true }
+tokio-stream = { version = "0.1.12", features = ["io-util"], optional = true, default-features = false }
+tokio-util = { version = "0.7.7", optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.11"
@@ -23,9 +27,11 @@ predicates = "3.0.3"
 rstest = { version = "0.17.0", default-features = false }
 rstest_reuse = "0.5.0"
 test-binary = "3.0.1"
+tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
 examples = ["dep:clap", "dep:lexopt"]
+tokio = ["dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
 
 [[example]]
 name = "flipcase"
@@ -34,3 +40,7 @@ required-features = ["examples"]
 [[example]]
 name = "revchars"
 required-features = ["examples"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
