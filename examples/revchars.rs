@@ -65,6 +65,11 @@ impl Command {
 
     fn run(self) -> std::io::Result<()> {
         match self {
+            Command::Run { infile, outfile } => {
+                let content = infile.read_to_string()?;
+                let tnetnoc = content.chars().rev().collect::<String>();
+                outfile.write(tnetnoc)
+            }
             Command::Help => {
                 println!("Usage: revchars [-o|--outfile <PATH>] [<PATH>]");
                 println!();
@@ -82,11 +87,6 @@ impl Command {
             Command::Version => {
                 println!("revchars: patharg {} example", env!("CARGO_PKG_VERSION"));
                 Ok(())
-            }
-            Command::Run { infile, outfile } => {
-                let content = infile.read_to_string()?;
-                let tnetnoc = content.chars().rev().collect::<String>();
-                outfile.write(tnetnoc)
             }
         }
     }

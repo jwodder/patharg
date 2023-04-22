@@ -47,7 +47,7 @@ patharg = "0.1.0"
 ```
 
 `patharg` has an optional `tokio` feature for enabling async I/O support with
-[`tokio`][].  To use this in your library, add the following instead:
+[`tokio`][].  To use this in your project, add the following instead:
 
 ```toml
 [dependencies]

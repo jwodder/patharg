@@ -67,6 +67,12 @@ impl Command {
 
     async fn run(self) -> std::io::Result<()> {
         match self {
+            Command::Run { infile, outfile } => {
+                let content = infile.async_read_to_string().await?;
+                let tnetnoc = content.chars().rev().collect::<String>();
+                outfile.async_write(tnetnoc).await?;
+                Ok(())
+            }
             Command::Help => {
                 println!("Usage: tokio-revchars [-o|--outfile <PATH>] [<PATH>]");
                 println!();
@@ -86,12 +92,6 @@ impl Command {
                     "tokio-revchars: patharg {} example",
                     env!("CARGO_PKG_VERSION")
                 );
-                Ok(())
-            }
-            Command::Run { infile, outfile } => {
-                let content = infile.async_read_to_string().await?;
-                let tnetnoc = content.chars().rev().collect::<String>();
-                outfile.async_write(tnetnoc).await?;
                 Ok(())
             }
         }
