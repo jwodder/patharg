@@ -43,7 +43,7 @@ library in your Cargo project, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-patharg = "0.2.0"
+patharg = "0.3.0"
 ```
 
 `patharg` has an optional `tokio` feature for enabling async I/O support with
@@ -51,7 +51,7 @@ patharg = "0.2.0"
 
 ```toml
 [dependencies]
-patharg = { version = "0.2.0", features = ["tokio"] }
+patharg = { version = "0.3.0", features = ["tokio"] }
 ```
 
 `patharg` also has an optional `serde` feature for enabling serializing &
@@ -60,7 +60,7 @@ your project, add the following instead:
 
 ```toml
 [dependencies]
-patharg = { version = "0.2.0", features = ["serde"] }
+patharg = { version = "0.3.0", features = ["serde"] }
 ```
 
 [`tokio`]: https://crates.io/crates/tokio

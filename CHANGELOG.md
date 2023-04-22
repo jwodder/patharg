@@ -1,5 +1,5 @@
-v0.3.0 (in development)
------------------------
+v0.3.0 (2023-04-22)
+-------------------
 - Formatting `InputArg::Stdin` or `OutputArg::Stdout` with `{:#}` will now
   produce `"<stdin>"` or `"<stdout>"`, respectively
 - Adjusted the trait bounds on the `from_arg()` methods and the `From`
