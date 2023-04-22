@@ -16,15 +16,19 @@
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
 //! The source repository contains examples of two of these:
 //!
-//! - [`examples/flipcase.rs`][flipcase] shows how to use this crate with
-//!   `clap`.
-//! - [`examples/revchars.rs`][revchars] shows how to use this crate with
-//!   `lexopt`.
+//! - [`examples/flipcase.rs`][flipcase] and
+//!   [`examples/tokio-flipcase.rs`][tokio-flipcase] show how to use this crate
+//!   with `clap`.
+//! - [`examples/revchars.rs`][revchars] and
+//!   [`examples/tokio-revchars.rs`][tokio-revchars] show how to use this crate
+//!   with `lexopt`.
 //!
 //! [`clap`]: https://crates.io/crates/clap
 //! [`lexopt`]: https://crates.io/crates/lexopt
 //! [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
+//! [tokio-flipcase]: https://github.com/jwodder/patharg/blob/master/examples/tokio-flipcase.rs
 //! [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
+//! [tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
 //!
 //! Comparison with clio
 //! ====================
@@ -497,7 +501,8 @@ impl InputArg {
     ///                           .map(InputArg::from_arg)
     ///                           .unwrap_or_default();
     ///     let mut i = 1;
-    ///     while let Some(r) = infile.async_lines().await?.next().await {
+    ///     let mut stream = infile.async_lines().await?;
+    ///     while let Some(r) = stream.next().await {
     ///         let line = r?;
     ///         println!("Line {} is {} characters long.", i, line.len());
     ///         i += 1;
@@ -787,7 +792,7 @@ impl OutputArg {
     ///     let mut f = outfile.async_create().await?;
     ///     // The "{}" is replaced by either the output filepath or a hyphen.
     ///     let msg = format!("I am writing to {}.\n", outfile);
-    ///     f.write_all(&msg.as_ref()).await?;
+    ///     f.write_all(msg.as_ref()).await?;
     ///     Ok(())
     /// }
     /// ```
@@ -827,7 +832,11 @@ impl OutputArg {
     /// ```
     pub async fn async_write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
         match self {
-            OutputArg::Stdout => tokio::io::stdout().write_all(contents.as_ref()).await,
+            OutputArg::Stdout => {
+                let mut stdout = tokio::io::stdout();
+                stdout.write_all(contents.as_ref()).await?;
+                stdout.flush().await
+            }
             OutputArg::Path(p) => tokio::fs::write(p, contents).await,
         }
     }

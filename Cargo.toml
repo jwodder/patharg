@@ -41,6 +41,14 @@ required-features = ["examples"]
 name = "revchars"
 required-features = ["examples"]
 
+[[example]]
+name = "tokio-flipcase"
+required-features = ["examples", "tokio"]
+
+[[example]]
+name = "tokio-revchars"
+required-features = ["examples", "tokio"]
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

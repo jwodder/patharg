@@ -1,5 +1,7 @@
 //! An example of using patharg with lexopt
 //!
+//! Run with `cargo run --example revchars --features examples`
+//!
 //! Say you're using lexopt to write a command named "revchars" that reverses
 //! the order of all characters in a file, and you want this command to take a
 //! path to a file to read input from and another path for the file to write
@@ -19,7 +21,7 @@
 //! - `revchars -o out.txt file.txt` — Read input from `file.txt`, write output
 //!    to `out.txt`
 //! - `revchars -o out.txt -` — Read input from stdin, write output to
-//!    `out.txt`
+//!   `out.txt`
 //! - `revchars -o - file.txt` — Read input from `file.txt`, write output to
 //!    stdout
 //! - `revchars -o - -` — Read input from stdin, write output to stdout
