@@ -1,5 +1,7 @@
 //! An example of using patharg with clap
 //!
+//! Run with `cargo run --example flipcase --features examples`
+//!
 //! Say you're using clap to write a command named "flipcase" that flips the
 //! cases of all the letters in a file, changing uppercase to lowercase and
 //! lowercase to uppercase, and you want this command to take a path to a file
@@ -20,7 +22,7 @@
 //! - `flipcase -o out.txt file.txt` — Read input from `file.txt`, write output
 //!    to `out.txt`
 //! - `flipcase -o out.txt -` — Read input from stdin, write output to
-//!    `out.txt`
+//!   `out.txt`
 //! - `flipcase -o - file.txt` — Read input from `file.txt`, write output to
 //!    stdout
 //! - `flipcase -o - -` — Read input from stdin, write output to stdout

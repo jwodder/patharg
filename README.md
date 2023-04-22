@@ -3,7 +3,7 @@
 [![codecov.io](https://codecov.io/gh/jwodder/patharg/branch/master/graph/badge.svg)](https://codecov.io/gh/jwodder/patharg)
 [![MIT License](https://img.shields.io/github/license/jwodder/patharg.svg)](https://opensource.org/licenses/MIT)
 
-[GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues)
+[GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues) | [Changelog](https://github.com/jwodder/patharg/blob/master/CHANGELOG.md)
 
 Most CLI commands that take file paths as arguments follow the convention of
 treating a path of `-` (a single hyphen/dash) as referring to either standard
@@ -19,15 +19,21 @@ arguments, be it [`clap`][], [`lexopt`][], plain old
 [`std::env::args`][args]/[`std::env::args_os`][args_os], or whatever else is
 out there.  The source repository contains examples of two of these:
 
-- [`examples/flipcase.rs`][flipcase] shows how to use this crate with `clap`.
-- [`examples/revchars.rs`][revchars] shows how to use this crate with `lexopt`.
+- [`examples/flipcase.rs`][flipcase] and
+  [`examples/tokio-flipcase.rs`][tokio-flipcase] show how to use this crate
+  with `clap`.
+- [`examples/revchars.rs`][revchars] and
+  [`examples/tokio-revchars.rs`][tokio-revchars] show how to use this crate
+  with `lexopt`.
 
 [`clap`]: https://crates.io/crates/clap
 [`lexopt`]: https://crates.io/crates/lexopt
 [args]: https://doc.rust-lang.org/std/env/fn.args.html
 [args_os]: https://doc.rust-lang.org/std/env/fn.args_os.html
 [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
+[tokio-flipcase]: https://github.com/jwodder/patharg/blob/master/examples/tokio-flipcase.rs
 [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
+[tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
 
 Installation
 ============
@@ -39,6 +45,16 @@ library in your Cargo project, add the following to your `Cargo.toml`:
 [dependencies]
 patharg = "0.1.0"
 ```
+
+`patharg` has an optional `tokio` feature for enabling async I/O support with
+[`tokio`][].  To use this in your library, add the following instead:
+
+```toml
+[dependencies]
+patharg = { version = "0.1.0", features = ["tokio"] }
+```
+
+[`tokio`]: https://crates.io/crates/tokio
 
 Comparison with clio
 ====================
@@ -57,5 +73,8 @@ between the libraries include:
 
 - `clio` supports reading from & writing to HTTP(S) URLs and has special
   treatment for FIFOs.  `patharg` sees no need for such excesses.
+
+- `patharg` has a feature for allowing async I/O with `tokio`.  `clio` does
+  not.
 
 [`clio`]: https://crates.io/crates/clio

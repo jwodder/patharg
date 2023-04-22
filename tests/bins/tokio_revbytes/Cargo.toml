@@ -1,0 +1,11 @@
+[package]
+name = "tokio_revbytes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.2.3", features = ["derive"] }
+patharg = { path = "../../..", features = ["tokio"] }
+tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
+
+[workspace]

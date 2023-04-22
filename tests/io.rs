@@ -11,6 +11,9 @@ use test_binary::build_test_binary_once;
 build_test_binary_once!(linelen, "tests/bins");
 build_test_binary_once!(revbytes, "tests/bins");
 build_test_binary_once!(revchars, "tests/bins");
+build_test_binary_once!(tokio_linelen, "tests/bins");
+build_test_binary_once!(tokio_revbytes, "tests/bins");
+build_test_binary_once!(tokio_revchars, "tests/bins");
 
 enum PathPolicy {
     Default,
@@ -121,6 +124,53 @@ fn test_read_and_write(#[case] policy: IOPolicy) {
 fn test_read_to_string_and_write(#[case] policy: IOPolicy) {
     policy.run(
         path_to_revchars(),
+        concat!(
+            "In Xanadu did Kubla Khan\n",
+            "A stately pleasure-dome decree:\n",
+            "Where Alph, the sacred river, ran\n",
+            "Through caverns measureless to man\n",
+            "\tDown to a sunless sea.\n",
+        ),
+        concat!(
+            "\n.aes sselnus a ot nwoD\t",
+            "\nnam ot sselerusaem snrevac hguorhT",
+            "\nnar ,revir dercas eht ,hplA erehW",
+            "\n:eerced emod-erusaelp yletats A",
+            "\nnahK albuK did udanaX nI",
+        ),
+    )
+}
+
+#[apply(policies)]
+fn test_tokio_lines_and_create(#[case] policy: IOPolicy) {
+    policy.run(
+        path_to_tokio_linelen(),
+        concat!(
+            "1\n",
+            "To\n",
+            "Tre\n",
+            "Four\n",
+            "The longest line in the file\n",
+            "\n",
+            "Goodbye\n",
+        ),
+        "1\n2\n3\n4\n28\n0\n7\n",
+    );
+}
+
+#[apply(policies)]
+fn test_tokio_read_and_write(#[case] policy: IOPolicy) {
+    policy.run(
+        path_to_tokio_revbytes(),
+        &b"\x1F\x8B\x08\x08\x0B\xC1\xA0\x62\x00\x03\x68\x69\x2E\x74\x78\x74\x00\xF3\xC8\xE4\x02\x00\x9A\x3C\x22\xD5\x03\x00\x00\x00"[..],
+        &b"\x00\x00\x00\x03\xd5\x22\x3C\x9a\x00\x02\xe4\xc8\xf3\x00\x74\x78\x74\x2e\x69\x68\x03\x00\x62\xa0\xc1\x0b\x08\x08\x8b\x1f"[..],
+    )
+}
+
+#[apply(policies)]
+fn test_tokio_read_to_string_and_write(#[case] policy: IOPolicy) {
+    policy.run(
+        path_to_tokio_revchars(),
         concat!(
             "In Xanadu did Kubla Khan\n",
             "A stately pleasure-dome decree:\n",

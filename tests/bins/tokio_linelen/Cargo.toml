@@ -1,0 +1,12 @@
+[package]
+name = "tokio_linelen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.2.3", features = ["derive"] }
+patharg = { path = "../../..", features = ["tokio"] }
+tokio = { version = "1.27.0", features = ["io-util", "macros", "rt-multi-thread"] }
+tokio-stream = { version = "0.1.12", default-features = false }
+
+[workspace]
