@@ -48,7 +48,11 @@
 //! - `clio` supports reading from & writing to HTTP(S) URLs and has special
 //!   treatment for FIFOs.  `patharg` sees no need for such excesses.
 //!
+//! - `patharg` has a feature for allowing async I/O with [`tokio`].  `clio`
+//!   does not.
+//!
 //! [`clio`]: https://crates.io/crates/clio
+//! [`tokio`]: https://crates.io/crates/tokio
 
 use cfg_if::cfg_if;
 use either::Either;

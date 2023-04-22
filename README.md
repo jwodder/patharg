@@ -3,7 +3,7 @@
 [![codecov.io](https://codecov.io/gh/jwodder/patharg/branch/master/graph/badge.svg)](https://codecov.io/gh/jwodder/patharg)
 [![MIT License](https://img.shields.io/github/license/jwodder/patharg.svg)](https://opensource.org/licenses/MIT)
 
-[GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues)
+[GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues) | [Changelog](https://github.com/jwodder/patharg/blob/master/CHANGELOG.md)
 
 Most CLI commands that take file paths as arguments follow the convention of
 treating a path of `-` (a single hyphen/dash) as referring to either standard
@@ -46,6 +46,16 @@ library in your Cargo project, add the following to your `Cargo.toml`:
 patharg = "0.1.0"
 ```
 
+`patharg` has an optional `tokio` feature for enabling async I/O support with
+[`tokio`][].  To use this in your library, add the following instead:
+
+```toml
+[dependencies]
+patharg = { version = "0.1.0", features = ["tokio"] }
+```
+
+[`tokio`]: https://crates.io/crates/tokio
+
 Comparison with clio
 ====================
 
@@ -63,5 +73,8 @@ between the libraries include:
 
 - `clio` supports reading from & writing to HTTP(S) URLs and has special
   treatment for FIFOs.  `patharg` sees no need for such excesses.
+
+- `patharg` has a feature for allowing async I/O with `tokio`.  `clio` does
+  not.
 
 [`clio`]: https://crates.io/crates/clio
