@@ -51,8 +51,11 @@
 //! - `patharg` has a feature for allowing async I/O with [`tokio`].  `clio`
 //!   does not.
 //!
+//! - `patharg` has optional support for [`serde`].  `clio` does not.
+//!
 //! [`clio`]: https://crates.io/crates/clio
 //! [`tokio`]: https://crates.io/crates/tokio
+//! [`serde`]: https://crates.io/crates/serde
 
 use cfg_if::cfg_if;
 use either::Either;
@@ -61,6 +64,14 @@ use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::{Path, PathBuf};
+
+cfg_if! {
+    if #[cfg(feature = "serde")] {
+        use serde::de::Deserializer;
+        use serde::ser::Serializer;
+        use serde::{Deserialize, Serialize};
+    }
+}
 
 cfg_if! {
     if #[cfg(feature = "tokio")] {
@@ -559,6 +570,33 @@ impl From<InputArg> for OsString {
     }
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl Serialize for InputArg {
+    /// Serializes [`InputArg::Stdin`] as `"-"` (a string containing a single
+    /// hyphen/dash).  Serializes [`InputArg::Path`] as the inner [`PathBuf`];
+    /// this will fail if the path is not valid UTF-8.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            InputArg::Stdin => "-".serialize(serializer),
+            InputArg::Path(p) => p.serialize(serializer),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> Deserialize<'de> for InputArg {
+    /// Deserializes a string and converts it to an `InputArg` with
+    /// [`InputArg::from_arg()`].
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        PathBuf::deserialize(deserializer).map(InputArg::from_arg)
+    }
+}
+
 /// An output path that can refer to either standard output or a file system
 /// path
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -891,6 +929,33 @@ impl From<OutputArg> for OsString {
     }
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl Serialize for OutputArg {
+    /// Serializes [`OutputArg::Stdout`] as `"-"` (a string containing a single
+    /// hyphen/dash).  Serializes [`OutputArg::Path`] as the inner [`PathBuf`];
+    /// this will fail if the path is not valid UTF-8.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            OutputArg::Stdout => "-".serialize(serializer),
+            OutputArg::Path(p) => p.serialize(serializer),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> Deserialize<'de> for OutputArg {
+    /// Deserializes a string and converts it to an `OutputArg` with
+    /// [`OutputArg::from_arg()`].
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        PathBuf::deserialize(deserializer).map(OutputArg::from_arg)
+    }
+}
+
 /// The type of the readers returned by [`InputArg::open()`].
 ///
 /// This type implements [`std::io::BufRead`].
@@ -1102,6 +1167,57 @@ mod tests {
             let p = InputArg::Path(PathBuf::from("./-"));
             assert_eq!(OsString::from(p), OsString::from("./-"));
         }
+
+        #[cfg(feature = "serde")]
+        mod serding {
+            use super::*;
+
+            #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+            struct Input {
+                path: InputArg,
+            }
+
+            #[test]
+            fn test_stdin_to_json() {
+                let val = Input {
+                    path: InputArg::Stdin,
+                };
+                assert_eq!(serde_json::to_string(&val).unwrap(), r#"{"path":"-"}"#);
+            }
+
+            #[test]
+            fn test_path_to_json() {
+                let val = Input {
+                    path: InputArg::Path(PathBuf::from("foo.txt")),
+                };
+                assert_eq!(
+                    serde_json::to_string(&val).unwrap(),
+                    r#"{"path":"foo.txt"}"#
+                );
+            }
+
+            #[test]
+            fn test_stdin_from_json() {
+                let s = r#"{"path": "-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Input>(s).unwrap(),
+                    Input {
+                        path: InputArg::Stdin
+                    }
+                );
+            }
+
+            #[test]
+            fn test_path_from_json() {
+                let s = r#"{"path": "./-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Input>(s).unwrap(),
+                    Input {
+                        path: InputArg::Path(PathBuf::from("./-"))
+                    }
+                );
+            }
+        }
     }
 
     mod outputarg {
@@ -1270,6 +1386,57 @@ mod tests {
         fn test_path_into_osstring() {
             let p = OutputArg::Path(PathBuf::from("./-"));
             assert_eq!(OsString::from(p), OsString::from("./-"));
+        }
+
+        #[cfg(feature = "serde")]
+        mod serding {
+            use super::*;
+
+            #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+            struct Output {
+                path: OutputArg,
+            }
+
+            #[test]
+            fn test_stdout_to_json() {
+                let val = Output {
+                    path: OutputArg::Stdout,
+                };
+                assert_eq!(serde_json::to_string(&val).unwrap(), r#"{"path":"-"}"#);
+            }
+
+            #[test]
+            fn test_path_to_json() {
+                let val = Output {
+                    path: OutputArg::Path(PathBuf::from("foo.txt")),
+                };
+                assert_eq!(
+                    serde_json::to_string(&val).unwrap(),
+                    r#"{"path":"foo.txt"}"#
+                );
+            }
+
+            #[test]
+            fn test_stdout_from_json() {
+                let s = r#"{"path": "-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Output>(s).unwrap(),
+                    Output {
+                        path: OutputArg::Stdout
+                    }
+                );
+            }
+
+            #[test]
+            fn test_path_from_json() {
+                let s = r#"{"path": "./-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Output>(s).unwrap(),
+                    Output {
+                        path: OutputArg::Path(PathBuf::from("./-"))
+                    }
+                );
+            }
         }
     }
 }

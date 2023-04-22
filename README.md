@@ -54,7 +54,17 @@ patharg = "0.2.0"
 patharg = { version = "0.2.0", features = ["tokio"] }
 ```
 
+`patharg` also has an optional `serde` feature for enabling serializing &
+deserializing `InputArg` & `OutputArg` values with [`serde`].  To use this in
+your project, add the following instead:
+
+```toml
+[dependencies]
+patharg = { version = "0.2.0", features = ["serde"] }
+```
+
 [`tokio`]: https://crates.io/crates/tokio
+[`serde`]: https://crates.io/crates/serde
 
 Comparison with clio
 ====================
@@ -76,5 +86,7 @@ between the libraries include:
 
 - `patharg` has a feature for allowing async I/O with `tokio`.  `clio` does
   not.
+
+- `patharg` has optional support for `serde`.  `clio` does not.
 
 [`clio`]: https://crates.io/crates/clio
