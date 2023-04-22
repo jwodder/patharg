@@ -1,6 +1,6 @@
 [package]
 name = "patharg"
-version = "0.2.0-dev"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.65"
 description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
