@@ -1,0 +1,11 @@
+[package]
+name = "tokio_revchars"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lexopt = "0.3.0"
+patharg = { path = "../../..", features = ["tokio"] }
+tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
+
+[workspace]
