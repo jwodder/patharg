@@ -1214,6 +1214,57 @@ mod tests {
             let p = InputArg::Path(PathBuf::from("./-"));
             assert_eq!(OsString::from(p), OsString::from("./-"));
         }
+
+        #[cfg(feature = "serde")]
+        mod serding {
+            use super::*;
+
+            #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+            struct Input {
+                path: InputArg,
+            }
+
+            #[test]
+            fn test_stdin_to_json() {
+                let val = Input {
+                    path: InputArg::Stdin,
+                };
+                assert_eq!(serde_json::to_string(&val).unwrap(), r#"{"path":"-"}"#);
+            }
+
+            #[test]
+            fn test_path_to_json() {
+                let val = Input {
+                    path: InputArg::Path(PathBuf::from("foo.txt")),
+                };
+                assert_eq!(
+                    serde_json::to_string(&val).unwrap(),
+                    r#"{"path":"foo.txt"}"#
+                );
+            }
+
+            #[test]
+            fn test_stdin_from_json() {
+                let s = r#"{"path": "-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Input>(s).unwrap(),
+                    Input {
+                        path: InputArg::Stdin
+                    }
+                );
+            }
+
+            #[test]
+            fn test_path_from_json() {
+                let s = r#"{"path": "./-"}"#;
+                assert_eq!(
+                    serde_json::from_str::<Input>(s).unwrap(),
+                    Input {
+                        path: InputArg::Path(PathBuf::from("./-"))
+                    }
+                );
+            }
+        }
     }
 
     mod outputarg {
