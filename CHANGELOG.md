@@ -1,3 +1,7 @@
+v0.4.0 (in development)
+-----------------------
+- Added `asynchronous` category to crate metadata
+
 v0.3.0 (2023-04-22)
 -------------------
 - Formatting `InputArg::Stdin` or `OutputArg::Stdout` with `{:#}` will now

@@ -1,6 +1,6 @@
 [package]
 name = "patharg"
-version = "0.3.0"
+version = "0.4.0-dev"
 edition = "2021"
 rust-version = "1.65"
 description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
@@ -8,7 +8,7 @@ authors = ["John Thorvald Wodder II <patharg@varonathe.org>"]
 repository = "https://github.com/jwodder/patharg"
 license = "MIT"
 keywords = ["argv", "args", "stdin", "stdout"]
-categories = ["command-line-interface", "filesystem"]
+categories = ["asynchronous", "command-line-interface", "filesystem"]
 exclude = ["/.*"]
 
 [dependencies]
