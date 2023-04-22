@@ -51,8 +51,11 @@
 //! - `patharg` has a feature for allowing async I/O with [`tokio`].  `clio`
 //!   does not.
 //!
+//! - `patharg` has optional support for [`serde`].  `clio` does not.
+//!
 //! [`clio`]: https://crates.io/crates/clio
 //! [`tokio`]: https://crates.io/crates/tokio
+//! [`serde`]: https://crates.io/crates/serde
 
 use cfg_if::cfg_if;
 use either::Either;

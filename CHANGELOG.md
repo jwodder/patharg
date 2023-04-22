@@ -6,6 +6,7 @@ v0.3.0 (in development)
   implementations.  Pre-existing code that uses these features will still work,
   but now some more types are accepted, and there should be no more needless
   copying of data.
+- Added "serde" feature to enabling serializing & deserializing with `serde`
 
 v0.2.0 (2023-04-21)
 -------------------
