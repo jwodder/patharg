@@ -522,14 +522,21 @@ impl InputArg {
 }
 
 impl fmt::Display for InputArg {
-    /// Displays [`InputArg::Stdin`] as `-` (a single hyphen/dash) and displays
+    /// Displays [`InputArg::Stdin`] as `-` (a single hyphen/dash) or as
+    /// `<stdin>` if the `{:#}` format is used.  Always displays
     /// [`InputArg::Path`] using [`std::path::Path::display()`].
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            // IMPORTANT: The Display of Stdin has to round-trip back to Stdin
-            // so that InputArg will work properly when used with clap's
-            // `default_value_t`.
-            InputArg::Stdin => write!(f, "-"),
+            // IMPORTANT: The default Display of Stdin has to round-trip back
+            // to Stdin so that InputArg will work properly when used with
+            // clap's `default_value_t`.
+            InputArg::Stdin => {
+                if f.alternate() {
+                    write!(f, "<stdin>")
+                } else {
+                    write!(f, "-")
+                }
+            }
             InputArg::Path(p) => write!(f, "{}", p.display()),
         }
     }
@@ -847,14 +854,21 @@ impl OutputArg {
 }
 
 impl fmt::Display for OutputArg {
-    /// Displays [`OutputArg::Stdout`] as `-` (a single hyphen/dash) and
-    /// displays [`OutputArg::Path`] using [`std::path::Path::display()`].
+    /// Displays [`OutputArg::Stdout`] as `-` (a single hyphen/dash) or as
+    /// `<stdout>` if the `{:#}` format is used.  Always displays
+    /// [`OutputArg::Path`] using [`std::path::Path::display()`].
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            // IMPORTANT: The Display of Stdout has to round-trip back to
-            // Stdout so that OutputArg will work properly when used with
+            // IMPORTANT: The default Display of Stdout has to round-trip back
+            // to Stdout so that OutputArg will work properly when used with
             // clap's `default_value_t`.
-            OutputArg::Stdout => write!(f, "-"),
+            OutputArg::Stdout => {
+                if f.alternate() {
+                    write!(f, "<stdout>")
+                } else {
+                    write!(f, "-")
+                }
+            }
             OutputArg::Path(p) => write!(f, "{}", p.display()),
         }
     }
@@ -1067,6 +1081,12 @@ mod tests {
         }
 
         #[test]
+        fn test_display_alternate_stdin() {
+            let p = InputArg::Stdin;
+            assert_eq!(format!("{:#}", p), "<stdin>");
+        }
+
+        #[test]
         fn test_display_path() {
             let p = InputArg::from_arg("./-");
             assert_eq!(p.to_string(), "./-");
@@ -1227,6 +1247,12 @@ mod tests {
         fn test_display_stdout() {
             let p = OutputArg::Stdout;
             assert_eq!(p.to_string(), "-");
+        }
+
+        #[test]
+        fn test_display_alternate_stdout() {
+            let p = OutputArg::Stdout;
+            assert_eq!(format!("{:#}", p), "<stdout>");
         }
 
         #[test]
