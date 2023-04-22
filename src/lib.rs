@@ -56,12 +56,11 @@
 
 use cfg_if::cfg_if;
 use either::Either;
-use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 cfg_if! {
     if #[cfg(feature = "tokio")] {
@@ -102,12 +101,12 @@ impl InputArg {
     /// let p2 = InputArg::from_arg("./-");
     /// assert_eq!(p2, InputArg::Path(PathBuf::from("./-")));
     /// ```
-    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> InputArg {
-        let arg = arg.as_ref();
-        if arg == "-" {
+    pub fn from_arg<S: Into<PathBuf>>(arg: S) -> InputArg {
+        let arg = arg.into();
+        if arg == Path::new("-") {
             InputArg::Stdin
         } else {
-            InputArg::Path(arg.into())
+            InputArg::Path(arg)
         }
     }
 
@@ -542,7 +541,7 @@ impl fmt::Display for InputArg {
     }
 }
 
-impl<S: AsRef<OsStr>> From<S> for InputArg {
+impl<S: Into<PathBuf>> From<S> for InputArg {
     /// Convert a string to a [`InputArg`] using [`InputArg::from_arg()`].
     fn from(s: S) -> InputArg {
         InputArg::from_arg(s)
@@ -592,12 +591,12 @@ impl OutputArg {
     /// let p2 = OutputArg::from_arg("./-");
     /// assert_eq!(p2, OutputArg::Path(PathBuf::from("./-")));
     /// ```
-    pub fn from_arg<S: AsRef<OsStr>>(arg: S) -> OutputArg {
-        let arg = arg.as_ref();
-        if arg == "-" {
+    pub fn from_arg<S: Into<PathBuf>>(arg: S) -> OutputArg {
+        let arg = arg.into();
+        if arg == Path::new("-") {
             OutputArg::Stdout
         } else {
-            OutputArg::Path(arg.into())
+            OutputArg::Path(arg)
         }
     }
 
@@ -874,7 +873,7 @@ impl fmt::Display for OutputArg {
     }
 }
 
-impl<S: AsRef<OsStr>> From<S> for OutputArg {
+impl<S: Into<PathBuf>> From<S> for OutputArg {
     /// Convert a string to a [`OutputArg`] using [`OutputArg::from_arg()`].
     fn from(s: S) -> OutputArg {
         OutputArg::from_arg(s)
@@ -934,7 +933,7 @@ cfg_if! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
+    use std::ffi::OsStr;
 
     mod inputarg {
         use super::*;
