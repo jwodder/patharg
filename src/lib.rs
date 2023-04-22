@@ -64,7 +64,7 @@ use std::path::{Path, PathBuf};
 
 cfg_if! {
     if #[cfg(feature = "serde")] {
-        use serde::de::{Deserializer, Unexpected, Visitor};
+        use serde::de::Deserializer;
         use serde::ser::Serializer;
         use serde::{Deserialize, Serialize};
     }
@@ -590,9 +590,7 @@ impl<'de> Deserialize<'de> for InputArg {
     where
         D: Deserializer<'de>,
     {
-        deserializer
-            .deserialize_string(StringVisitor)
-            .map(InputArg::from_arg)
+        PathBuf::deserialize(deserializer).map(InputArg::from_arg)
     }
 }
 
@@ -951,9 +949,7 @@ impl<'de> Deserialize<'de> for OutputArg {
     where
         D: Deserializer<'de>,
     {
-        deserializer
-            .deserialize_string(StringVisitor)
-            .map(OutputArg::from_arg)
+        PathBuf::deserialize(deserializer).map(OutputArg::from_arg)
     }
 }
 
@@ -993,52 +989,6 @@ cfg_if! {
        /// This stream yields instances of `std::io::Result<String>`.
        #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
        pub type AsyncLines = LinesStream<tokio::io::BufReader<AsyncInputArgReader>>;
-    }
-}
-
-#[cfg(feature = "serde")]
-struct StringVisitor;
-
-#[cfg(feature = "serde")]
-impl<'de> Visitor<'de> for StringVisitor {
-    type Value = String;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a string")
-    }
-
-    fn visit_str<E>(self, input: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(String::from(input))
-    }
-
-    fn visit_string<E>(self, input: String) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        Ok(input)
-    }
-
-    fn visit_bytes<E>(self, input: &[u8]) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        match std::str::from_utf8(input) {
-            Ok(s) => Ok(String::from(s)),
-            Err(_) => Err(E::invalid_value(Unexpected::Bytes(input), &self)),
-        }
-    }
-
-    fn visit_byte_buf<E>(self, input: Vec<u8>) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        match String::from_utf8(input) {
-            Ok(s) => Ok(s),
-            Err(e) => Err(E::invalid_value(Unexpected::Bytes(&e.into_bytes()), &self)),
-        }
     }
 }
 
