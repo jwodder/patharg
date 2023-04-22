@@ -63,6 +63,14 @@ use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::{Path, PathBuf};
 
 cfg_if! {
+    if #[cfg(feature = "serde")] {
+        use serde::de::{Deserializer, Unexpected, Visitor};
+        use serde::ser::Serializer;
+        use serde::{Deserialize, Serialize};
+    }
+}
+
+cfg_if! {
     if #[cfg(feature = "tokio")] {
         use tokio::io::{AsyncReadExt, AsyncWriteExt, AsyncBufReadExt};
         use tokio_util::either::Either as AsyncEither;
@@ -559,6 +567,35 @@ impl From<InputArg> for OsString {
     }
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl Serialize for InputArg {
+    /// Serializes [`InputArg::Stdin`] as `"-"` (a string containing a single
+    /// hyphen/dash).  Serializes [`InputArg::Path`] as the inner [`PathBuf`];
+    /// this will fail if the path is not valid UTF-8.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            InputArg::Stdin => "-".serialize(serializer),
+            InputArg::Path(p) => p.serialize(serializer),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> Deserialize<'de> for InputArg {
+    /// Deserializes a string and converts it to an `InputArg` with
+    /// [`InputArg::from_arg()`].
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer
+            .deserialize_string(StringVisitor)
+            .map(InputArg::from_arg)
+    }
+}
+
 /// An output path that can refer to either standard output or a file system
 /// path
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -891,6 +928,35 @@ impl From<OutputArg> for OsString {
     }
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl Serialize for OutputArg {
+    /// Serializes [`OutputArg::Stdout`] as `"-"` (a string containing a single
+    /// hyphen/dash).  Serializes [`OutputArg::Path`] as the inner [`PathBuf`];
+    /// this will fail if the path is not valid UTF-8.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            OutputArg::Stdout => "-".serialize(serializer),
+            OutputArg::Path(p) => p.serialize(serializer),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> Deserialize<'de> for OutputArg {
+    /// Deserializes a string and converts it to an `OutputArg` with
+    /// [`OutputArg::from_arg()`].
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer
+            .deserialize_string(StringVisitor)
+            .map(OutputArg::from_arg)
+    }
+}
+
 /// The type of the readers returned by [`InputArg::open()`].
 ///
 /// This type implements [`std::io::BufRead`].
@@ -927,6 +993,52 @@ cfg_if! {
        /// This stream yields instances of `std::io::Result<String>`.
        #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
        pub type AsyncLines = LinesStream<tokio::io::BufReader<AsyncInputArgReader>>;
+    }
+}
+
+#[cfg(feature = "serde")]
+struct StringVisitor;
+
+#[cfg(feature = "serde")]
+impl<'de> Visitor<'de> for StringVisitor {
+    type Value = String;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a string")
+    }
+
+    fn visit_str<E>(self, input: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(String::from(input))
+    }
+
+    fn visit_string<E>(self, input: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(input)
+    }
+
+    fn visit_bytes<E>(self, input: &[u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match std::str::from_utf8(input) {
+            Ok(s) => Ok(String::from(s)),
+            Err(_) => Err(E::invalid_value(Unexpected::Bytes(input), &self)),
+        }
+    }
+
+    fn visit_byte_buf<E>(self, input: Vec<u8>) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match String::from_utf8(input) {
+            Ok(s) => Ok(s),
+            Err(e) => Err(E::invalid_value(Unexpected::Bytes(&e.into_bytes()), &self)),
+        }
     }
 }
 
