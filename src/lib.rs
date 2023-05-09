@@ -30,6 +30,21 @@
 //! [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
 //! [tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
 //!
+//! Features
+//! ========
+//!
+//! The `patharg` crate has the following optional features.  None of them are
+//! enabled by default.
+//!
+//! - `serde` — enables serialization & deserialization of `InputArg` and
+//!   `OutputArg` values with [`serde`][]
+//!
+//! - `tokio` — enables using `InputArg` and `OutputArg` values for
+//!   asynchronous I/O with [`tokio`][]
+//!
+//! - `examples` — adds dependencies needed by the example programs in
+//!   `patharg`'s source repository; don't enable it yourself
+//!
 //! Comparison with clio
 //! ====================
 //!
