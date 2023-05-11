@@ -1,6 +1,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![CI Status](https://github.com/jwodder/patharg/actions/workflows/test.yml/badge.svg)](https://github.com/jwodder/patharg/actions/workflows/test.yml)
 [![codecov.io](https://codecov.io/gh/jwodder/patharg/branch/master/graph/badge.svg)](https://codecov.io/gh/jwodder/patharg)
+[![Minimum Supported Rust Version](https://img.shields.io/badge/MSRV-1.65-orange)](https://www.rust-lang.org)
 [![MIT License](https://img.shields.io/github/license/jwodder/patharg.svg)](https://opensource.org/licenses/MIT)
 
 [GitHub](https://github.com/jwodder/patharg) | [crates.io](https://crates.io/crates/patharg) | [Documentation](https://docs.rs/patharg) | [Issues](https://github.com/jwodder/patharg/issues) | [Changelog](https://github.com/jwodder/patharg/blob/master/CHANGELOG.md)
@@ -35,37 +36,6 @@ out there.  The source repository contains examples of two of these:
 [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
 [tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
 
-Installation
-============
-
-`patharg` requires version 1.65 of Rust or higher.  To use the `patharg`
-library in your Cargo project, add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-patharg = "0.3.0"
-```
-
-`patharg` has an optional `tokio` feature for enabling async I/O support with
-[`tokio`][].  To use this in your project, add the following instead:
-
-```toml
-[dependencies]
-patharg = { version = "0.3.0", features = ["tokio"] }
-```
-
-`patharg` also has an optional `serde` feature for enabling serializing &
-deserializing `InputArg` & `OutputArg` values with [`serde`].  To use this in
-your project, add the following instead:
-
-```toml
-[dependencies]
-patharg = { version = "0.3.0", features = ["serde"] }
-```
-
-[`tokio`]: https://crates.io/crates/tokio
-[`serde`]: https://crates.io/crates/serde
-
 Comparison with clio
 ====================
 
@@ -84,9 +54,11 @@ between the libraries include:
 - `clio` supports reading from & writing to HTTP(S) URLs and has special
   treatment for FIFOs.  `patharg` sees no need for such excesses.
 
-- `patharg` has a feature for allowing async I/O with `tokio`.  `clio` does
+- `patharg` has a feature for allowing async I/O with [`tokio`][].  `clio` does
   not.
 
-- `patharg` has optional support for `serde`.  `clio` does not.
+- `patharg` has optional support for [`serde`][].  `clio` does not.
 
 [`clio`]: https://crates.io/crates/clio
+[`tokio`]: https://crates.io/crates/tokio
+[`serde`]: https://crates.io/crates/serde

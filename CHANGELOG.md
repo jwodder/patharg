@@ -1,6 +1,8 @@
 v0.4.0 (in development)
 -----------------------
 - Added `asynchronous` category to crate metadata
+- Remove installation instructions from README
+- List all features in the library documentation
 
 v0.3.0 (2023-04-22)
 -------------------

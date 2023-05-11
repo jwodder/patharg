@@ -1,6 +1,4 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-//! Treat "-" (hyphen/dash) arguments as stdin/stdout
-//!
 //! Most CLI commands that take file paths as arguments follow the convention
 //! of treating a path of `-` (a single hyphen/dash) as referring to either
 //! standard input or standard output (depending on whether the path is read
@@ -36,14 +34,14 @@
 //! The `patharg` crate has the following optional features.  None of them are
 //! enabled by default.
 //!
-//! - `serde` — enables serialization & deserialization of `InputArg` and
+//! - `serde` — Enables serialization & deserialization of `InputArg` and
 //!   `OutputArg` values with [`serde`][]
 //!
-//! - `tokio` — enables using `InputArg` and `OutputArg` values for
+//! - `tokio` — Enables using `InputArg` and `OutputArg` values for
 //!   asynchronous I/O with [`tokio`][]
 //!
-//! - `examples` — adds dependencies needed by the example programs in
-//!   `patharg`'s source repository; don't enable it yourself
+//! - `examples` — Adds dependencies needed by the example programs in
+//!   `patharg`'s source repository.  Do not enable when installing.
 //!
 //! Comparison with clio
 //! ====================
@@ -63,10 +61,10 @@
 //! - `clio` supports reading from & writing to HTTP(S) URLs and has special
 //!   treatment for FIFOs.  `patharg` sees no need for such excesses.
 //!
-//! - `patharg` has a feature for allowing async I/O with [`tokio`].  `clio`
+//! - `patharg` has a feature for allowing async I/O with [`tokio`][].  `clio`
 //!   does not.
 //!
-//! - `patharg` has optional support for [`serde`].  `clio` does not.
+//! - `patharg` has optional support for [`serde`][].  `clio` does not.
 //!
 //! [`clio`]: https://crates.io/crates/clio
 //! [`tokio`]: https://crates.io/crates/tokio
