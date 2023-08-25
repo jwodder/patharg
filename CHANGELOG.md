@@ -3,7 +3,7 @@ v0.4.0 (in development)
 - Added `asynchronous` category to crate metadata
 - Remove installation instructions from README
 - List all features in the library documentation
-- Increased MSRV to 1.66
+- Increased MSRV to 1.70
 
 v0.3.0 (2023-04-22)
 -------------------
