@@ -4,10 +4,10 @@ use std::io::Write;
 
 #[derive(Parser)]
 struct Arguments {
-    #[clap(short = 'o', long, default_value_t)]
+    #[arg(short = 'o', long, default_value_t)]
     outfile: OutputArg,
 
-    #[clap(default_value_t)]
+    #[arg(default_value_t)]
     infile: InputArg,
 }
 

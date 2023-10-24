@@ -38,13 +38,13 @@ use tokio_stream::StreamExt;
 #[derive(Parser)]
 struct Arguments {
     /// The file to write the case-flipped text to.
-    #[clap(short = 'o', long, default_value_t)]
+    #[arg(short = 'o', long, default_value_t)]
     // The `default_value_t` attribute causes the default value of the argument
     // to be `OutputArg::default()`, which equals `OutputArg::Stdout`.
     outfile: OutputArg,
 
     /// The file to read the text to case-flip from.
-    #[clap(default_value_t)]
+    #[arg(default_value_t)]
     // The `default_value_t` attribute causes the default value of the argument
     // to be `InputArg::default()`, which equals `InputArg::Stdin`.
     infile: InputArg,
