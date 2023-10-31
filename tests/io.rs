@@ -1,10 +1,9 @@
-extern crate rstest_reuse;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
 use predicates::prelude::*;
 use rstest::rstest;
-use rstest_reuse::{apply, template};
+use rstest_reuse::{self, apply, template};
 use std::ffi::OsString;
 use test_binary::build_test_binary_once;
 
