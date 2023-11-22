@@ -1,3 +1,4 @@
+#![cfg(test)]
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
@@ -116,7 +117,7 @@ fn test_read_and_write(#[case] policy: IOPolicy) {
         path_to_revbytes(),
         &b"\x1F\x8B\x08\x08\x0B\xC1\xA0\x62\x00\x03\x68\x69\x2E\x74\x78\x74\x00\xF3\xC8\xE4\x02\x00\x9A\x3C\x22\xD5\x03\x00\x00\x00"[..],
         &b"\x00\x00\x00\x03\xd5\x22\x3C\x9a\x00\x02\xe4\xc8\xf3\x00\x74\x78\x74\x2e\x69\x68\x03\x00\x62\xa0\xc1\x0b\x08\x08\x8b\x1f"[..],
-    )
+    );
 }
 
 #[apply(policies)]
@@ -137,7 +138,7 @@ fn test_read_to_string_and_write(#[case] policy: IOPolicy) {
             "\n:eerced emod-erusaelp yletats A",
             "\nnahK albuK did udanaX nI",
         ),
-    )
+    );
 }
 
 #[apply(policies)]
@@ -163,7 +164,7 @@ fn test_tokio_read_and_write(#[case] policy: IOPolicy) {
         path_to_tokio_revbytes(),
         &b"\x1F\x8B\x08\x08\x0B\xC1\xA0\x62\x00\x03\x68\x69\x2E\x74\x78\x74\x00\xF3\xC8\xE4\x02\x00\x9A\x3C\x22\xD5\x03\x00\x00\x00"[..],
         &b"\x00\x00\x00\x03\xd5\x22\x3C\x9a\x00\x02\xe4\xc8\xf3\x00\x74\x78\x74\x2e\x69\x68\x03\x00\x62\xa0\xc1\x0b\x08\x08\x8b\x1f"[..],
-    )
+    );
 }
 
 #[apply(policies)]
@@ -184,5 +185,5 @@ fn test_tokio_read_to_string_and_write(#[case] policy: IOPolicy) {
             "\n:eerced emod-erusaelp yletats A",
             "\nnahK albuK did udanaX nI",
         ),
-    )
+    );
 }

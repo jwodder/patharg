@@ -548,7 +548,7 @@ impl fmt::Display for InputArg {
     /// Displays [`InputArg::Stdin`] as `-` (a single hyphen/dash) or as
     /// `<stdin>` if the `{:#}` format is used.  Always displays
     /// [`InputArg::Path`] using [`std::path::Path::display()`].
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             // IMPORTANT: The default Display of Stdin has to round-trip back
             // to Stdin so that InputArg will work properly when used with
@@ -891,6 +891,7 @@ impl OutputArg {
     ///     Ok(())
     /// }
     /// ```
+    #[allow(clippy::future_not_send)] // The Future is Send if C is Send
     pub async fn async_write<C: AsRef<[u8]>>(&self, contents: C) -> io::Result<()> {
         match self {
             OutputArg::Stdout => {
@@ -907,7 +908,7 @@ impl fmt::Display for OutputArg {
     /// Displays [`OutputArg::Stdout`] as `-` (a single hyphen/dash) or as
     /// `<stdout>` if the `{:#}` format is used.  Always displays
     /// [`OutputArg::Path`] using [`std::path::Path::display()`].
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             // IMPORTANT: The default Display of Stdout has to round-trip back
             // to Stdout so that OutputArg will work properly when used with
@@ -1160,7 +1161,7 @@ mod tests {
         #[test]
         fn test_display_alternate_stdin() {
             let p = InputArg::Stdin;
-            assert_eq!(format!("{:#}", p), "<stdin>");
+            assert_eq!(format!("{p:#}"), "<stdin>");
         }
 
         #[test]
@@ -1380,7 +1381,7 @@ mod tests {
         #[test]
         fn test_display_alternate_stdout() {
             let p = OutputArg::Stdout;
-            assert_eq!(format!("{:#}", p), "<stdout>");
+            assert_eq!(format!("{p:#}"), "<stdout>");
         }
 
         #[test]
@@ -1399,6 +1400,15 @@ mod tests {
         fn test_path_into_osstring() {
             let p = OutputArg::Path(PathBuf::from("./-"));
             assert_eq!(OsString::from(p), OsString::from("./-"));
+        }
+
+        #[cfg(feature = "tokio")]
+        #[test]
+        fn test_async_write_is_send_if_content_is_send() {
+            fn require_send<T: Send>(_t: T) {}
+            let p = OutputArg::default();
+            let fut = p.async_write(b"This arg is Send.");
+            require_send(fut);
         }
 
         #[cfg(feature = "serde")]
