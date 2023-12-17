@@ -10,7 +10,7 @@
 //!
 //! `InputArg` and `OutputArg` implement `From<OsString>` and `From<String>`,
 //! so you can use them seamlessly with your favorite Rust source of
-//! command-line arguments, be it [`clap`][], [`lexopt`][], plain old
+//! command-line arguments, be it [`clap`], [`lexopt`], plain old
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
 //! The source repository contains examples of two of these:
 //!
@@ -21,8 +21,6 @@
 //!   [`examples/tokio-revchars.rs`][tokio-revchars] show how to use this crate
 //!   with `lexopt`.
 //!
-//! [`clap`]: https://crates.io/crates/clap
-//! [`lexopt`]: https://crates.io/crates/lexopt
 //! [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
 //! [tokio-flipcase]: https://github.com/jwodder/patharg/blob/master/examples/tokio-flipcase.rs
 //! [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
@@ -35,10 +33,10 @@
 //! enabled by default.
 //!
 //! - `serde` — Enables serialization & deserialization of `InputArg` and
-//!   `OutputArg` values with [`serde`][]
+//!   `OutputArg` values with [`serde`]
 //!
 //! - `tokio` — Enables using `InputArg` and `OutputArg` values for
-//!   asynchronous I/O with [`tokio`][]
+//!   asynchronous I/O with [`tokio`]
 //!
 //! - `examples` — Adds dependencies needed by the example programs in
 //!   `patharg`'s source repository.  Do not enable when installing.
@@ -61,14 +59,12 @@
 //! - `clio` supports reading from & writing to HTTP(S) URLs and has special
 //!   treatment for FIFOs.  `patharg` sees no need for such excesses.
 //!
-//! - `patharg` has a feature for allowing async I/O with [`tokio`][].  `clio`
+//! - `patharg` has a feature for allowing async I/O with [`tokio`].  `clio`
 //!   does not.
 //!
-//! - `patharg` has optional support for [`serde`][].  `clio` does not.
+//! - `patharg` has optional support for [`serde`].  `clio` does not.
 //!
 //! [`clio`]: https://crates.io/crates/clio
-//! [`tokio`]: https://crates.io/crates/tokio
-//! [`serde`]: https://crates.io/crates/serde
 
 use cfg_if::cfg_if;
 use either::Either;
