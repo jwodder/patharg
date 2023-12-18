@@ -1,5 +1,5 @@
-v0.4.0 (in development)
------------------------
+v0.4.0 (2023-12-18)
+-------------------
 - Added `asynchronous` category to crate metadata
 - Remove installation instructions from README
 - List all features in the library documentation
