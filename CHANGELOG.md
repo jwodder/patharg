@@ -4,6 +4,7 @@ v0.4.0 (in development)
 - Remove installation instructions from README
 - List all features in the library documentation
 - Increased MSRV to 1.70
+- `InputArg` and `OutputArg` now implement `FromStr`
 
 v0.3.0 (2023-04-22)
 -------------------

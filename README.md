@@ -14,9 +14,9 @@ provides `InputArg` and `OutputArg` types that wrap command-line arguments,
 with methods for reading from/writing to either the given path or — if the
 argument is just a hyphen — the appropriate standard stream.
 
-`InputArg` and `OutputArg` implement `From<OsString>` and `From<String>`, so
-you can use them seamlessly with your favorite Rust source of command-line
-arguments, be it [`clap`][], [`lexopt`][], plain old
+`InputArg` and `OutputArg` implement `From<OsString>`, `From<String>`, and
+`FromStr`, so you can use them seamlessly with your favorite Rust source of
+command-line arguments, be it [`clap`][], [`lexopt`][], plain old
 [`std::env::args`][args]/[`std::env::args_os`][args_os], or whatever else is
 out there.  The source repository contains examples of two of these:
 

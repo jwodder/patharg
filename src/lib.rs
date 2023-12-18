@@ -8,8 +8,8 @@
 //! given path or — if the argument is just a hyphen — the appropriate standard
 //! stream.
 //!
-//! `InputArg` and `OutputArg` implement `From<OsString>` and `From<String>`,
-//! so you can use them seamlessly with your favorite Rust source of
+//! `InputArg` and `OutputArg` implement `From<OsString>`, `From<String>`, and
+//! `FromStr`, so you can use them seamlessly with your favorite Rust source of
 //! command-line arguments, be it [`clap`], [`lexopt`], plain old
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
 //! The source repository contains examples of two of these:
@@ -73,6 +73,7 @@ use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, StdinLock, StdoutLock, Write};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 cfg_if! {
     if #[cfg(feature = "serde")] {
@@ -562,15 +563,24 @@ impl fmt::Display for InputArg {
 }
 
 impl<S: Into<PathBuf>> From<S> for InputArg {
-    /// Convert a string to a [`InputArg`] using [`InputArg::from_arg()`].
+    /// Convert a string to an [`InputArg`] using [`InputArg::from_arg()`].
     fn from(s: S) -> InputArg {
         InputArg::from_arg(s)
     }
 }
 
+impl FromStr for InputArg {
+    type Err = std::convert::Infallible;
+
+    /// Convert a string to an [`InputArg`] using [`InputArg::from_arg()`].
+    fn from_str(s: &str) -> Result<InputArg, Self::Err> {
+        Ok(InputArg::from_arg(s))
+    }
+}
+
 impl From<InputArg> for OsString {
-    /// Converts an input arg back to an `OsString`: `InputArg::Stdin` becomes
-    /// `"-"`, and `InputArg::Path(p)` becomes `p.into()`.
+    /// Convert an [`InputArg`] back to an `OsString`: `InputArg::Stdin`
+    /// becomes `"-"`, and `InputArg::Path(p)` becomes `p.into()`.
     fn from(arg: InputArg) -> OsString {
         match arg {
             InputArg::Stdin => OsString::from("-"),
@@ -596,7 +606,7 @@ impl Serialize for InputArg {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for InputArg {
-    /// Deserializes a string and converts it to an `InputArg` with
+    /// Deserializes a [`PathBuf`] and converts it to an `InputArg` with
     /// [`InputArg::from_arg()`].
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -922,14 +932,23 @@ impl fmt::Display for OutputArg {
 }
 
 impl<S: Into<PathBuf>> From<S> for OutputArg {
-    /// Convert a string to a [`OutputArg`] using [`OutputArg::from_arg()`].
+    /// Convert an string to an [`OutputArg`] using [`OutputArg::from_arg()`].
     fn from(s: S) -> OutputArg {
         OutputArg::from_arg(s)
     }
 }
 
+impl FromStr for OutputArg {
+    type Err = std::convert::Infallible;
+
+    /// Convert a string to an [`OutputArg`] using [`OutputArg::from_arg()`].
+    fn from_str(s: &str) -> Result<OutputArg, Self::Err> {
+        Ok(OutputArg::from_arg(s))
+    }
+}
+
 impl From<OutputArg> for OsString {
-    /// Converts an output arg back to an `OsString`: `OutputArg::Stdout`
+    /// Convert an [`OutputArg`] back to an `OsString`: `OutputArg::Stdout`
     /// becomes `"-"`, and `OutputArg::Path(p)` becomes `p.into()`.
     fn from(arg: OutputArg) -> OsString {
         match arg {
@@ -956,7 +975,7 @@ impl Serialize for OutputArg {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for OutputArg {
-    /// Deserializes a string and converts it to an `OutputArg` with
+    /// Deserializes a [`PathBuf`] and converts it to an `OutputArg` with
     /// [`OutputArg::from_arg()`].
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -1103,6 +1122,20 @@ mod tests {
         #[test]
         fn test_assert_path_from_str() {
             let p = InputArg::from("./-");
+            assert!(!p.is_stdin());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_parse_stdin() {
+            let p = "-".parse::<InputArg>().unwrap();
+            assert!(p.is_stdin());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_parse_path() {
+            let p = "./-".parse::<InputArg>().unwrap();
             assert!(!p.is_stdin());
             assert!(p.is_path());
         }
@@ -1323,6 +1356,20 @@ mod tests {
         #[test]
         fn test_assert_path_from_str() {
             let p = OutputArg::from("./-");
+            assert!(!p.is_stdout());
+            assert!(p.is_path());
+        }
+
+        #[test]
+        fn test_assert_parse_stdin() {
+            let p = "-".parse::<OutputArg>().unwrap();
+            assert!(p.is_stdout());
+            assert!(!p.is_path());
+        }
+
+        #[test]
+        fn test_assert_parse_path() {
+            let p = "./-".parse::<OutputArg>().unwrap();
             assert!(!p.is_stdout());
             assert!(p.is_path());
         }
