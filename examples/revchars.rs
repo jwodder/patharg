@@ -19,11 +19,11 @@
 //! - `revchars -o out.txt` — Read input from stdin, write output to `out.txt`
 //! - `revchars -o -` — Read input from stdin, write output to stdout
 //! - `revchars -o out.txt file.txt` — Read input from `file.txt`, write output
-//!    to `out.txt`
+//!   to `out.txt`
 //! - `revchars -o out.txt -` — Read input from stdin, write output to
 //!   `out.txt`
 //! - `revchars -o - file.txt` — Read input from `file.txt`, write output to
-//!    stdout
+//!   stdout
 //! - `revchars -o - -` — Read input from stdin, write output to stdout
 
 use lexopt::{Arg, Parser};
