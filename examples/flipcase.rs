@@ -20,11 +20,11 @@
 //! - `flipcase -o out.txt` — Read input from stdin, write output to `out.txt`
 //! - `flipcase -o -` — Read input from stdin, write output to stdout
 //! - `flipcase -o out.txt file.txt` — Read input from `file.txt`, write output
-//!    to `out.txt`
+//!   to `out.txt`
 //! - `flipcase -o out.txt -` — Read input from stdin, write output to
 //!   `out.txt`
 //! - `flipcase -o - file.txt` — Read input from `file.txt`, write output to
-//!    stdout
+//!   stdout
 //! - `flipcase -o - -` — Read input from stdin, write output to stdout
 
 use clap::Parser;
