@@ -11,7 +11,7 @@ license = "MIT"
 
 [package]
 name = "patharg"
-version = "0.4.1-dev"
+version = "0.4.1"
 edition.workspace = true
 rust-version.workspace = true
 description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
