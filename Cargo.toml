@@ -1,21 +1,30 @@
-[package]
-name = "patharg"
-version = "0.5.0-dev"
+[workspace]
+members = ["examples/*"]
+resolver = "2"
+
+[workspace.package]
 edition = "2021"
 rust-version = "1.78"
-description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
 authors = ["John Thorvald Wodder II <patharg@varonathe.org>"]
 repository = "https://github.com/jwodder/patharg"
 license = "MIT"
+
+[package]
+name = "patharg"
+version = "0.4.1-dev"
+edition.workspace = true
+rust-version.workspace = true
+description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
 keywords = ["argv", "args", "stdin", "stdout"]
 categories = ["asynchronous", "command-line-interface", "filesystem"]
 exclude = ["/.*"]
 
 [dependencies]
 cfg-if = "1.0.0"
-clap = { version = "4.2.3", optional = true, features = ["derive"] }
 either = "1.8.1"
-lexopt = { version = "0.3.0", optional = true }
 serde = { version = "1.0.160", optional = true }
 tokio = { version = "1.27.0", features = ["fs", "io-std", "io-util"], optional = true }
 tokio-stream = { version = "0.1.12", features = ["io-util"], optional = true, default-features = false }
@@ -33,31 +42,17 @@ test-binary = "3.0.1"
 tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-examples = ["dep:clap", "dep:lexopt"]
 serde = ["dep:serde"]
 tokio = ["dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
-
-[[example]]
-name = "flipcase"
-required-features = ["examples"]
-
-[[example]]
-name = "revchars"
-required-features = ["examples"]
-
-[[example]]
-name = "tokio-flipcase"
-required-features = ["examples", "tokio"]
-
-[[example]]
-name = "tokio-revchars"
-required-features = ["examples", "tokio"]
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
-[lints.rust]
+[lints]
+workspace = true
+
+[workspace.lints.rust]
 # Lint groups:
 deprecated_safe = { level = "deny", priority = -1 }
 future_incompatible = { level = "deny", priority = -1 }
@@ -134,7 +129,7 @@ unused_associated_type_bounds = "deny"
 unused_comparisons = "deny"
 while_true = "deny"
 
-[lints.rustdoc]
+[workspace.lints.rustdoc]
 bare_urls = "deny"
 broken_intra_doc_links = "deny"
 invalid_codeblock_attributes = "deny"
@@ -145,7 +140,7 @@ private_intra_doc_links = "deny"
 redundant_explicit_links = "deny"
 unescaped_backticks = "deny"
 
-[lints.clippy]
+[workspace.lints.clippy]
 # Deny all warn-by-default lints:
 all = { level = "deny", priority = -1 }
 

@@ -1,6 +1,7 @@
-v0.5.0 (in development)
+v0.4.1 (in development)
 -----------------------
 - Increased MSRV to 1.78
+- Moved example programs to workspace crates and removed "examples" feature
 
 v0.4.0 (2023-12-18)
 -------------------

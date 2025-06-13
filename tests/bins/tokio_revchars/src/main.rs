@@ -1,1 +1,1 @@
-../../../../examples/tokio-revchars.rs
+../../../../examples/tokio-revchars/src/main.rs

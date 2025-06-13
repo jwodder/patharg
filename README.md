@@ -20,21 +20,20 @@ command-line arguments, be it [`clap`][], [`lexopt`][], plain old
 [`std::env::args`][args]/[`std::env::args_os`][args_os], or whatever else is
 out there.  The source repository contains examples of two of these:
 
-- [`examples/flipcase.rs`][flipcase] and
-  [`examples/tokio-flipcase.rs`][tokio-flipcase] show how to use this crate
-  with `clap`.
-- [`examples/revchars.rs`][revchars] and
-  [`examples/tokio-revchars.rs`][tokio-revchars] show how to use this crate
-  with `lexopt`.
+- [`flipcase`][] and [`tokio-flipcase`][] show how to use this crate with
+  `clap`.
+
+- [`revchars`][] and [`tokio-revchars`][] show how to use this crate with
+  `lexopt`.
 
 [`clap`]: https://crates.io/crates/clap
 [`lexopt`]: https://crates.io/crates/lexopt
 [args]: https://doc.rust-lang.org/std/env/fn.args.html
 [args_os]: https://doc.rust-lang.org/std/env/fn.args_os.html
-[flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
-[tokio-flipcase]: https://github.com/jwodder/patharg/blob/master/examples/tokio-flipcase.rs
-[revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
-[tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
+[`flipcase`]: https://github.com/jwodder/patharg/tree/master/examples/flipcase/
+[`tokio-flipcase`]: https://github.com/jwodder/patharg/tree/master/examples/tokio-flipcase/
+[`revchars`]: https://github.com/jwodder/patharg/tree/master/examples/revchars/
+[`tokio-revchars`]: https://github.com/jwodder/patharg/tree/master/examples/tokio-revchars/
 
 Comparison with clio
 ====================
