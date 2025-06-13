@@ -1,2 +1,2 @@
-Cargo.lock
+tests/**/Cargo.lock
 target/

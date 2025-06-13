@@ -1,0 +1,17 @@
+[package]
+name = "flipcase"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "An example of using patharg with clap"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+clap = { version = "4.2.3", features = ["derive"] }
+patharg = { path = "../.." }
+
+[lints]
+workspace = true

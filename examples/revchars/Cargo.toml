@@ -1,0 +1,17 @@
+[package]
+name = "revchars"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "An example of using patharg with lexopt"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+lexopt = "0.3.0"
+patharg = { path = "../.." }
+
+[lints]
+workspace = true

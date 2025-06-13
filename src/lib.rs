@@ -10,21 +10,22 @@
 //!
 //! `InputArg` and `OutputArg` implement `From<OsString>`, `From<String>`, and
 //! `FromStr`, so you can use them seamlessly with your favorite Rust source of
-//! command-line arguments, be it [`clap`], [`lexopt`], plain old
+//! command-line arguments, be it [`clap`][], [`lexopt`][], plain old
 //! [`std::env::args`]/[`std::env::args_os`], or whatever else is out there.
 //! The source repository contains examples of two of these:
 //!
-//! - [`examples/flipcase.rs`][flipcase] and
-//!   [`examples/tokio-flipcase.rs`][tokio-flipcase] show how to use this crate
-//!   with `clap`.
-//! - [`examples/revchars.rs`][revchars] and
-//!   [`examples/tokio-revchars.rs`][tokio-revchars] show how to use this crate
-//!   with `lexopt`.
+//! - [`flipcase`][] and [`tokio-flipcase`][] show how to use this crate with
+//!   `clap`.
 //!
-//! [flipcase]: https://github.com/jwodder/patharg/blob/master/examples/flipcase.rs
-//! [tokio-flipcase]: https://github.com/jwodder/patharg/blob/master/examples/tokio-flipcase.rs
-//! [revchars]: https://github.com/jwodder/patharg/blob/master/examples/revchars.rs
-//! [tokio-revchars]: https://github.com/jwodder/patharg/blob/master/examples/tokio-revchars.rs
+//! - [`revchars`][] and [`tokio-revchars`][] show how to use this crate with
+//!   `lexopt`.
+//!
+//! [`clap`]: https://crates.io/crates/clap
+//! [`lexopt`]: https://crates.io/crates/lexopt
+//! [`flipcase`]: https://github.com/jwodder/patharg/tree/master/examples/flipcase/
+//! [`tokio-flipcase`]: https://github.com/jwodder/patharg/tree/master/examples/tokio-flipcase/
+//! [`revchars`]: https://github.com/jwodder/patharg/tree/master/examples/revchars/
+//! [`tokio-revchars`]: https://github.com/jwodder/patharg/tree/master/examples/tokio-revchars/
 //!
 //! Features
 //! ========
@@ -37,9 +38,6 @@
 //!
 //! - `tokio` — Enables using `InputArg` and `OutputArg` values for
 //!   asynchronous I/O with [`tokio`]
-//!
-//! - `examples` — Adds dependencies needed by the example programs in
-//!   `patharg`'s source repository.  Do not enable when installing.
 //!
 //! Comparison with clio
 //! ====================

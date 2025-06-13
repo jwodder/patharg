@@ -1,1 +1,1 @@
-../../../../examples/revchars.rs
+../../../../examples/revchars/src/main.rs
