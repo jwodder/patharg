@@ -16,6 +16,7 @@ build_test_binary_once!(tokio_linelen, "tests/bins");
 build_test_binary_once!(tokio_revbytes, "tests/bins");
 build_test_binary_once!(tokio_revchars, "tests/bins");
 
+#[allow(dead_code)]
 enum PathPolicy {
     Default,
     Hyphen,
