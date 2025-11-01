@@ -1,3 +1,7 @@
+v0.5.0 (in development)
+-----------------------
+- Increased MSRV to 1.85
+
 v0.4.1 (2025-06-13)
 -------------------
 - Increased MSRV to 1.78
