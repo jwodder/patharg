@@ -1,8 +1,8 @@
 #![cfg(test)]
 #![allow(missing_docs)]
 use assert_cmd::Command;
-use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use assert_fs::prelude::*;
 use predicates::prelude::*;
 use rstest::rstest;
 use rstest_reuse::{self, apply, template};
