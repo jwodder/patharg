@@ -4,14 +4,14 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-rust-version = "1.78"
+rust-version = "1.85"
 authors = ["John Thorvald Wodder II <patharg@varonathe.org>"]
 repository = "https://github.com/jwodder/patharg"
 license = "MIT"
 
 [package]
 name = "patharg"
-version = "0.4.1"
+version = "0.5.0-dev"
 edition.workspace = true
 rust-version.workspace = true
 description = "Treat \"-\" (hyphen/dash) arguments as stdin/stdout"
