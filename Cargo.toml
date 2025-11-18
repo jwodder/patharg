@@ -1,6 +1,5 @@
 [workspace]
 members = ["examples/*"]
-resolver = "2"
 
 [workspace.package]
 edition = "2024"
