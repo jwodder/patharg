@@ -1,4 +1,4 @@
-This is an example program demontrating use of `patharg` with
+This is an example program demonstrating use of `patharg` with
 [`lexopt`](https://crates.io/crates/lexopt) and
 [`tokio`](https://crates.io/crates/tokio).
 

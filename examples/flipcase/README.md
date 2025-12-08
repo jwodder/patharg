@@ -1,4 +1,4 @@
-This is an example program demontrating use of `patharg` with
+This is an example program demonstrating use of `patharg` with
 [`clap`](https://crates.io/crates/clap).
 
 Say you're using `clap` to write a command named "`flipcase`" that flips the

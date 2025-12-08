@@ -1,4 +1,4 @@
-This is an example program demontrating use of `patharg` with
+This is an example program demonstrating use of `patharg` with
 [`lexopt`](https://crates.io/crates/lexopt).
 
 Say you're using `lexopt` to write a command named "`revchars`" that reverses
