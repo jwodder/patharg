@@ -45,12 +45,12 @@ impl Command {
                 Ok(())
             }
             Command::Help => {
-                println!("Usage: tokio-revchars [-o|--outfile <PATH>] [<PATH>]");
+                println!("Usage: tokio-revchars [<options>] [<path>]");
                 println!();
                 println!("Reverse the characters in a file");
                 println!();
                 println!("Options:");
-                println!("  -o <PATH>, --outfile <PATH>");
+                println!("  -o PATH, --outfile PATH");
                 println!(
                     "                    The file to write the reversed text to [default: stdout]"
                 );

@@ -44,12 +44,12 @@ impl Command {
                 outfile.write(tnetnoc)
             }
             Command::Help => {
-                println!("Usage: revchars [-o|--outfile <PATH>] [<PATH>]");
+                println!("Usage: revchars [<options>] [<path>]");
                 println!();
                 println!("Reverse the characters in a file");
                 println!();
                 println!("Options:");
-                println!("  -o <PATH>, --outfile <PATH>");
+                println!("  -o PATH, --outfile PATH");
                 println!(
                     "                    The file to write the reversed text to [default: stdout]"
                 );
