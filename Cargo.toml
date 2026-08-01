@@ -3,7 +3,7 @@ members = ["examples/*"]
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 authors = ["John Thorvald Wodder II <patharg@varonathe.org>"]
 repository = "https://github.com/jwodder/patharg"
 license = "MIT"
